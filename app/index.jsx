@@ -1,12 +1,11 @@
-// app/index.tsx
 import { Link } from 'expo-router';
 import { signInAnonymously } from 'firebase/auth/react-native';
 import { useState } from 'react';
 import { Alert, Button, Text, View } from 'react-native';
-import { getAuthInstance } from '../firebaseConfig';
+import { getAuthInstance } from '../firebase/firebaseConfig';
 
 export default function HomeScreen() {
-  const [uid, setUid] = useState<string | null>(null);
+  const [uid, setUid] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
@@ -15,7 +14,7 @@ export default function HomeScreen() {
       const auth = getAuthInstance();                 // ← 여기서만 초기화
       const { user } = await signInAnonymously(auth); // ← auth 넘겨줌
       setUid(user.uid);
-    } catch (e: any) {
+    } catch (e) {
       Alert.alert('로그인 실패', e.message);
     } finally {
       setLoading(false);
@@ -33,7 +32,9 @@ export default function HomeScreen() {
           disabled={loading}
         />
       )}
-      <Link href="/profile"><Text style={{ color: 'blue', marginTop: 20 }}>프로필로 이동</Text></Link>
+      <Link href="/profile">
+        <Text style={{ color: 'blue', marginTop: 20 }}>프로필로 이동</Text>
+      </Link>
     </View>
   );
 }

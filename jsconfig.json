@@ -1,0 +1,10 @@
+// jsconfig.json
+{
+  "compilerOptions": {
+    "baseUrl": ".", // 루트 기준
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": ["./"]
+}
