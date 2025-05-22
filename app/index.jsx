@@ -1,5 +1,4 @@
-import { Link } from 'expo-router';
-import { signInAnonymously } from 'firebase/auth';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   Alert,
@@ -10,15 +9,31 @@ import {
   Text,
   View,
 } from 'react-native';
-import { getAuthInstance } from '../firebase/firebaseConfig';
 
+import { getAuthInstance, onAuthStateChanged } from '../firebase/firebaseConfig'; // ✅ 인증 상태 확인
 import { checkBLEStatus } from '../utils/ble/checkStatus';
 import { startDeviceScanAndConnect } from '../utils/ble/startDeviceScanAndConnect';
+
 export default function HomeScreen() {
   const [uid, setUid] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [bleDevice, setBleDevice] = useState(null);
   const [scanning, setScanning] = useState(false);
+  const router = useRouter();
+
+  // ✅ Firebase 인증 감지
+  useEffect(() => {
+    const auth = getAuthInstance();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUid(user.uid);
+        console.log('✅ 로그인된 UID:', user.uid);
+      } else {
+        setUid(null);
+        console.log('❌ 로그아웃 상태');
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   const requestBLEPermissions = async () => {
     if (Platform.OS === 'android') {
@@ -52,22 +67,8 @@ export default function HomeScreen() {
         Alert.alert('BLE 오류', err.message);
       }
     };
-
     initBLE();
   }, []);
-
-  const handleLogin = async () => {
-    try {
-      setLoading(true);
-      const auth = getAuthInstance();
-      const { user } = await signInAnonymously(auth);
-      setUid(user.uid);
-    } catch (e) {
-      Alert.alert('로그인 실패', e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleScan = () => {
     if (scanning) return;
@@ -85,31 +86,37 @@ export default function HomeScreen() {
       <Text style={styles.title}>🏠 홈 화면</Text>
       {uid && <Text>UID: {uid}</Text>}
 
+      {/* 로그인 안 된 경우 → 카카오 로그인 화면으로 이동 */}
       {!uid && (
         <Button
-          title={loading ? '로그인 중…' : '익명 로그인'}
-          onPress={handleLogin}
-          disabled={loading}
+          title="카카오 로그인 페이지로 이동"
+          color="#FEE500"
+          onPress={() => router.push('/login/LoginScreen')}
         />
       )}
 
+      {/* 로그인된 경우에만 BLE 버튼 표시 */}
       {uid && (
-        <Button
-          title={scanning ? '스캔 중…' : 'BLE 장치 스캔'}
-          onPress={handleScan}
-          disabled={scanning}
-        />
+        <>
+          <Button
+            title={scanning ? '스캔 중…' : 'BLE 장치 스캔'}
+            onPress={handleScan}
+            disabled={scanning}
+          />
+
+          {bleDevice && (
+            <Text style={{ marginTop: 20 }}>
+              🔗 연결된 장치: {bleDevice.name || '알 수 없음'}
+            </Text>
+          )}
+        </>
       )}
 
-      {bleDevice && (
-        <Text style={{ marginTop: 20 }}>
-          🔗 연결된 장치: {bleDevice.name || '알 수 없음'}
-        </Text>
-      )}
-
-      <Link href="/profile">
-        <Text style={styles.link}>프로필로 이동</Text>
-      </Link>
+      <Button
+        title="프로필로 이동"
+        onPress={() => router.push('/profile')}
+        color="blue"
+      />
     </View>
   );
 }
