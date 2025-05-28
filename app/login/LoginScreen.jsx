@@ -3,7 +3,7 @@ import { signInWithCustomToken } from 'firebase/auth';
 import { Alert, Button, View } from 'react-native';
 import { getAuthInstance } from '../../firebase/firebaseConfig';
 
-const SERVER_URL = 'http://172.30.1.73:3000/kakao-login'; // ⚠️ 실제 서버 주소로 변경
+const SERVER_URL = 'http://172.31.56.41:3000/kakao-login'; // ⚠️ 실제 서버 주소로 변경
 
 export default function LoginScreen() {
   const login = async () => {
@@ -29,7 +29,7 @@ export default function LoginScreen() {
       // 3. Firebase 로그인
       const auth = getAuthInstance();
       await signInWithCustomToken(auth, firebaseToken);
-      console.log('✅ Firebase 로그인 성공');
+      console.log('✅ Firebase 로그인 성공', firebaseToken);
 
       Alert.alert('로그인 성공');
     } catch (error) {

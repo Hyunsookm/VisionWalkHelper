@@ -10,7 +10,8 @@ import {
   View,
 } from 'react-native';
 
-import { getAuthInstance, onAuthStateChanged } from '../firebase/firebaseConfig'; // ✅ 인증 상태 확인
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { getAuthInstance } from '../firebase/firebaseConfig';
 import { checkBLEStatus } from '../utils/ble/checkStatus';
 import { startDeviceScanAndConnect } from '../utils/ble/startDeviceScanAndConnect';
 
@@ -18,22 +19,8 @@ export default function HomeScreen() {
   const [uid, setUid] = useState(null);
   const [bleDevice, setBleDevice] = useState(null);
   const [scanning, setScanning] = useState(false);
-  const router = useRouter();
 
-  // ✅ Firebase 인증 감지
-  useEffect(() => {
-    const auth = getAuthInstance();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUid(user.uid);
-        console.log('✅ 로그인된 UID:', user.uid);
-      } else {
-        setUid(null);
-        console.log('❌ 로그아웃 상태');
-      }
-    });
-    return unsubscribe;
-  }, []);
+  const router = useRouter();
 
   const requestBLEPermissions = async () => {
     if (Platform.OS === 'android') {
@@ -59,6 +46,16 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
+    // 로그인 유지 감지
+    const unsubscribe = onAuthStateChanged(getAuthInstance(), (user) => {
+      if (user) {
+        setUid(user.uid);
+      } else {
+        setUid(null);
+      }
+    });
+
+    // BLE 초기화
     const initBLE = async () => {
       try {
         await requestBLEPermissions();
@@ -67,7 +64,10 @@ export default function HomeScreen() {
         Alert.alert('BLE 오류', err.message);
       }
     };
+
     initBLE();
+
+    return () => unsubscribe();
   }, []);
 
   const handleScan = () => {
@@ -81,12 +81,21 @@ export default function HomeScreen() {
     });
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut(getAuthInstance());
+      Alert.alert('로그아웃 성공');
+    } catch (error) {
+      console.error('로그아웃 실패:', error);
+      Alert.alert('로그아웃 실패', error.message);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>🏠 홈 화면</Text>
       {uid && <Text>UID: {uid}</Text>}
 
-      {/* 로그인 안 된 경우 → 카카오 로그인 화면으로 이동 */}
       {!uid && (
         <Button
           title="카카오 로그인 페이지로 이동"
@@ -95,7 +104,6 @@ export default function HomeScreen() {
         />
       )}
 
-      {/* 로그인된 경우에만 BLE 버튼 표시 */}
       {uid && (
         <>
           <Button
@@ -103,13 +111,18 @@ export default function HomeScreen() {
             onPress={handleScan}
             disabled={scanning}
           />
-
-          {bleDevice && (
-            <Text style={{ marginTop: 20 }}>
-              🔗 연결된 장치: {bleDevice.name || '알 수 없음'}
-            </Text>
-          )}
+          <Button
+            title="로그아웃"
+            onPress={handleLogout}
+            color="#ff4d4d"
+          />
         </>
+      )}
+
+      {bleDevice && (
+        <Text style={{ marginTop: 20 }}>
+          🔗 연결된 장치: {bleDevice.name || '알 수 없음'}
+        </Text>
       )}
 
       <Button
@@ -124,5 +137,4 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 20, marginBottom: 10 },
-  link: { color: 'blue', marginTop: 20 },
 });
