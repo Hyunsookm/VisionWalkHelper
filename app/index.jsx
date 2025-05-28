@@ -1,4 +1,5 @@
-import { useRouter } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import {
   Alert,
@@ -9,8 +10,6 @@ import {
   Text,
   View,
 } from 'react-native';
-
-import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { getAuthInstance } from '../firebase/firebaseConfig';
 import { checkBLEStatus } from '../utils/ble/checkStatus';
 import { startDeviceScanAndConnect } from '../utils/ble/startDeviceScanAndConnect';

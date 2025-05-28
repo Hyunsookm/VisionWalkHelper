@@ -1,4 +1,5 @@
 // server.js
+const cors = require('cors');
 const express = require('express');
 const admin = require('firebase-admin');
 const axios = require('axios');
@@ -33,6 +34,7 @@ app.post('/kakao-login', async (req, res) => {
     res.status(400).send('인증 실패');
   }
 });
+app.use(cors());
 
 app.listen(3000, () => {
   console.log('🔥 서버 실행 중: http://localhost:3000');

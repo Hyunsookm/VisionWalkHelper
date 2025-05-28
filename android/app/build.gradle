@@ -183,6 +183,10 @@ dependencies {
     implementation("com.kakao.sdk:v2-friend:2.19.0") // 피커 API 모듈
     implementation("com.kakao.sdk:v2-navi:2.19.0") // 카카오내비 API 모듈
     implementation("com.kakao.sdk:v2-cert:2.19.0") // 카카오톡 인증 서비스 API 모듈
+
+
+    // Naver Map Android SDK 의존성 (버전은 최신으로)
+    implementation "com.naver.maps:map-sdk:3.15.1"
 }
 allprojects {
     repositories {
