@@ -125,11 +125,20 @@ export default function HomeScreen() {
         </Text>
       )}
 
+<<<<<<< HEAD
       <Button
         title="프로필로 이동"
         onPress={() => router.push('/profile')}
         color="blue"
       />
+=======
+      <Link href="/profile">
+        <Text style={styles.link}>프로필로 이동</Text>
+      </Link>
+      <Link href="/map">
+        <Text style={styles.link}>🗺️ 지도 화면으로 이동</Text>
+      </Link>
+>>>>>>> 131dc6e516559b365a1a33fc53743e6167c1e870
     </View>
   );
 }

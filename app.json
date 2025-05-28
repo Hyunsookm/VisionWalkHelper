@@ -12,8 +12,14 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "This app needs access to Bluetooth to connect to devices.",
-        "NSBluetoothPeripheralUsageDescription": "This app needs access to Bluetooth to connect to peripheral devices."
-      }
+        "NSBluetoothPeripheralUsageDescription": "This app needs access to Bluetooth to connect to peripheral devices.",
+        "NSLocationWhenInUseUsageDescription": "앱이 사용 중일 때 위치 정보를 사용합니다.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "앱이 백그라운드에서도 위치 정보를 사용합니다.",
+        "NSLocationTemporaryUsageDescriptionDictionary": {
+          "common-purpose": "정확한 위치를 사용하기 위해 필요합니다."
+        }
+      },
+      "bundleIdentifier": "com.capstone.visionwalkhelper"
     },
     "android": {
       "adaptiveIcon": {
@@ -44,7 +50,19 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      [
+        "react-native-permissions",
+        {
+          "permissions": {
+            "ios": [
+              "LOCATION_WHEN_IN_USE",
+              "LOCATION_ALWAYS"
+            ]
+          }
+        }
+      ],
+      "expo-build-properties"
     ],
     "experiments": {
       "typedRoutes": true
