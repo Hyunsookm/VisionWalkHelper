@@ -113,6 +113,8 @@ export default function HomeScreen() {
       <Link href="/map">
         <Text style={styles.link}>🗺️ 지도 화면으로 이동</Text>
       </Link>
+        <Link href="/settings">
+            <Text style={styles.link}>로그인 화면으로 이동</Text>
     </View>
   );
 }
