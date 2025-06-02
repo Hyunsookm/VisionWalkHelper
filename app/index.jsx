@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { signInAnonymously } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import {
@@ -14,11 +14,14 @@ import { getAuthInstance } from '../firebase/firebaseConfig';
 
 import { checkBLEStatus } from '../utils/ble/checkStatus';
 import { startDeviceScanAndConnect } from '../utils/ble/startDeviceScanAndConnect';
+
 export default function HomeScreen() {
   const [uid, setUid] = useState(null);
   const [loading, setLoading] = useState(false);
   const [bleDevice, setBleDevice] = useState(null);
   const [scanning, setScanning] = useState(false);
+
+  const router = useRouter(); // ✅ useRouter 훅 추가
 
   const requestBLEPermissions = async () => {
     if (Platform.OS === 'android') {
@@ -113,8 +116,24 @@ export default function HomeScreen() {
       <Link href="/map">
         <Text style={styles.link}>🗺️ 지도 화면으로 이동</Text>
       </Link>
-        <Link href="/settings">
-            <Text style={styles.link}>로그인 화면으로 이동</Text>
+
+      {/* ✅ 역할 선택 버튼 추가 */}
+      <Text style={{ marginTop: 30, fontSize: 16 }}>회원가입 유형 선택</Text>
+
+      <View style={styles.buttonRow}>
+        <Button
+          title="사용자로 가입"
+          onPress={() => router.push('/signup/user')}
+        />
+        <Button
+          title="보호자로 가입"
+          onPress={() => router.push('/signup/guardian')}
+        />
+      </View>
+
+      <Link href="/login">
+        <Text style={styles.link}>로그인 화면으로 이동</Text>
+      </Link>
     </View>
   );
 }
@@ -123,4 +142,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 20, marginBottom: 10 },
   link: { color: 'blue', marginTop: 20 },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
+  },
 });
