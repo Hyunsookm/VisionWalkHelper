@@ -1,4 +1,4 @@
-import { Link, useRouter } from 'expo-router';
+import { Link } from 'expo-router';
 import { signInAnonymously } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import {
@@ -14,7 +14,6 @@ import { getAuthInstance } from '../firebase/firebaseConfig';
 
 import { checkBLEStatus } from '../utils/ble/checkStatus';
 import { startDeviceScanAndConnect } from '../utils/ble/startDeviceScanAndConnect';
-
 export default function HomeScreen() {
   const [uid, setUid] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -47,6 +46,16 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
+    // 로그인 유지 감지
+    const unsubscribe = onAuthStateChanged(getAuthInstance(), (user) => {
+      if (user) {
+        setUid(user.uid);
+      } else {
+        setUid(null);
+      }
+    });
+
+    // BLE 초기화
     const initBLE = async () => {
       try {
         await requestBLEPermissions();
@@ -57,20 +66,9 @@ export default function HomeScreen() {
     };
 
     initBLE();
-  }, []);
 
-  const handleLogin = async () => {
-    try {
-      setLoading(true);
-      const auth = getAuthInstance();
-      const { user } = await signInAnonymously(auth);
-      setUid(user.uid);
-    } catch (e) {
-      Alert.alert('로그인 실패', e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    return () => unsubscribe();
+  }, []);
 
   const handleScan = () => {
     if (scanning) return;
@@ -83,6 +81,16 @@ export default function HomeScreen() {
     });
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut(getAuthInstance());
+      Alert.alert('로그아웃 성공');
+    } catch (error) {
+      console.error('로그아웃 실패:', error);
+      Alert.alert('로그아웃 실패', error.message);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>🏠 홈 화면</Text>
@@ -90,18 +98,25 @@ export default function HomeScreen() {
 
       {!uid && (
         <Button
-          title={loading ? '로그인 중…' : '익명 로그인'}
-          onPress={handleLogin}
-          disabled={loading}
+          title="카카오 로그인 페이지로 이동"
+          color="#FEE500"
+          onPress={() => router.push('/login/LoginScreen')}
         />
       )}
 
       {uid && (
-        <Button
-          title={scanning ? '스캔 중…' : 'BLE 장치 스캔'}
-          onPress={handleScan}
-          disabled={scanning}
-        />
+        <>
+          <Button
+            title={scanning ? '스캔 중…' : 'BLE 장치 스캔'}
+            onPress={handleScan}
+            disabled={scanning}
+          />
+          <Button
+            title="로그아웃"
+            onPress={handleLogout}
+            color="#ff4d4d"
+          />
+        </>
       )}
 
       {bleDevice && (
@@ -110,6 +125,11 @@ export default function HomeScreen() {
         </Text>
       )}
 
+      <Button
+        title="프로필로 이동"
+        onPress={() => router.push('/profile')}
+        color="blue"
+      />
       <Link href="/profile">
         <Text style={styles.link}>프로필로 이동</Text>
       </Link>
@@ -142,9 +162,4 @@ const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 20, marginBottom: 10 },
   link: { color: 'blue', marginTop: 20 },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 10,
-  },
 });
