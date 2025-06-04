@@ -3,19 +3,36 @@
     "name": "VisionWalkHelper",
     "slug": "VisionWalkHelper",
     "version": "1.0.0",
-    "sdkVersion": "53.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/mario.png",
+    "icon": "./assets/images/icon.png",
     "scheme": "visionwalkhelper",
     "userInterfaceStyle": "automatic",
-    "jsEngine": "hermes",
-    "experimental": {
-      "fabric": false
-    },
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.capstone.visionwalkhelper",
       "infoPlist": {
+        // 1) Make sure the module can read your app key at runtime:
+        "KAKAO_APP_KEY": "kakao0d500c85e8e9b46cc532ec3111fb84bb",
+
+        // 2) Register Kakao's custom URL scheme so it can callback:
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "kakao0d500c85e8e9b46cc532ec3111fb84bb"
+            ]
+          }
+        ],
+
+        // 3) Whitelist Kakao-auth schemes so iOS can open them:
+        "LSApplicationQueriesSchemes": [
+          "kakaokompassauth",
+          "kakaolink",
+          "kakaoauth",
+          "kakaotalk"
+        ],
+
+        // (Optional) Any other permissions you already had:
         "NSBluetoothAlwaysUsageDescription": "This app needs access to Bluetooth to connect to devices.",
         "NSBluetoothPeripheralUsageDescription": "This app needs access to Bluetooth to connect to peripheral devices.",
         "NSLocationWhenInUseUsageDescription": "앱이 사용 중일 때 위치 정보를 사용합니다.",
@@ -23,8 +40,7 @@
         "NSLocationTemporaryUsageDescriptionDictionary": {
           "common-purpose": "정확한 위치를 사용하기 위해 필요합니다."
         }
-      },
-      "bundleIdentifier": "com.capstone.visionwalkhelper"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -67,16 +83,17 @@
           }
         }
       ],
-      "expo-build-properties"
+      "expo-build-properties",
+      [
+        "@react-native-seoul/kakao-login",
+        {
+          "kakaoAppKey": "kakao0d500c85e8e9b46cc532ec3111fb84bb",
+          "kakaoRedirectURL": "kakao0d500c85e8e9b46cc532ec3111fb84bb://oauth"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
-    },
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "15990f46-b918-459b-b7bc-e537a8f7961a"
-      }
     }
   }
 }

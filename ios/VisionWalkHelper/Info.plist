@@ -27,13 +27,28 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>visionwalkhelper</string>
-          <string>com.capstone.visionwalkhelper</string>
+          <string>kakao0d500c85e8e9b46cc532ec3111fb84bb</string>
+        </array>
+      </dict>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>kakaokakao0d500c85e8e9b46cc532ec3111fb84bb</string>
         </array>
       </dict>
     </array>
     <key>CFBundleVersion</key>
     <string>1</string>
+    <key>KAKAO_APP_KEY</key>
+    <string>kakao0d500c85e8e9b46cc532ec3111fb84bb</string>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+      <string>kakaokompassauth</string>
+      <string>kakaolink</string>
+      <string>kakaoauth</string>
+      <string>kakaotalk</string>
+      <string>storykompassauth</string>
+    </array>
     <key>LSMinimumSystemVersion</key>
     <string>12.0</string>
     <key>LSRequiresIPhoneOS</key>
@@ -59,7 +74,7 @@
     <string>앱이 사용 중일 때 위치 정보를 사용합니다.</string>
     <key>NSLocationTemporaryUsageDescriptionDictionary</key>
     <dict>
-      <key>정확한 위치를 사용하기 위해 필요합니다.</key>
+      <key>common-purpose</key>
       <string>정확한 위치를 사용하기 위해 필요합니다.</string>
     </dict>
     <key>NSLocationWhenInUseUsageDescription</key>
