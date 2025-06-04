@@ -3,10 +3,15 @@
     "name": "VisionWalkHelper",
     "slug": "VisionWalkHelper",
     "version": "1.0.0",
+    "sdkVersion": "53.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/mario.png",
     "scheme": "visionwalkhelper",
     "userInterfaceStyle": "automatic",
+    "jsEngine": "hermes",
+    "experimental": {
+      "fabric": false
+    },
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
@@ -66,6 +71,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "15990f46-b918-459b-b7bc-e537a8f7961a"
+      }
     }
   }
 }
