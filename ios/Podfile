@@ -23,7 +23,7 @@ target 'VisionWalkHelper' do
   use_expo_modules!
 
   # ✅ 네이버 지도 SDK 추가
-  pod 'NMapsMap'
+  pod 'NMapsMap', :modular_headers => true
 
   if ENV['EXPO_USE_COMMUNITY_AUTOLINKING'] == '1'
     config_command = ['node', '-e', "process.argv=['', '', 'config'];require('@react-native-community/cli').run()"]

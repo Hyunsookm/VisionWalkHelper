@@ -1,7 +1,7 @@
 "use client"
 
 import * as KakaoLogin from "@react-native-seoul/kakao-login"
-import { signInWithCustomToken } from "firebase/auth"
+import { signInWithCustomToken, signInWithEmailAndPassword } from "firebase/auth"
 import { useState } from "react"
 import {
   ActivityIndicator,
@@ -15,34 +15,39 @@ import {
 import Icon from "react-native-vector-icons/Feather"
 import { getAuthInstance } from "../../firebase/firebaseConfig"
 import styles from '../styles/styles'
+import { useRouter } from 'expo-router'
 
 const SERVER_URL = "http://3.39.142.7:3000/kakao-login"
 
-import { useRouter } from 'expo-router'
-
 export default function LoginScreen() {
-  const router = useRouter(); {
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [phoneNumber, setPhoneNumber] = useState("010-1234-5678")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
 
-  
-
   const handleLogin = async () => {
-  try {
-    const auth = getAuthInstance();
-    const user = auth.currentUser;
-    if (user) {
-      router.replace("/RoleSelectionScreen");
-    } else {
-      Alert.alert("오류", "로그인 정보가 없습니다.");
-    }
-  } catch (err) {
-    Alert.alert("로그인 실패", err.message);
-  }
-}
+    try {
+      setLoading(true)
+      const auth = getAuthInstance()
+      const email = `${phoneNumber.replace(/-/g, "")}@example.com`
 
+      await signInWithEmailAndPassword(auth, email, password)
+
+      Alert.alert("로그인 성공")
+      router.replace("/RoleSelectionScreen")
+    } catch (err) {
+      if (err.code === "auth/user-not-found") {
+        Alert.alert("로그인 실패", "등록되지 않은 전화번호입니다.")
+      } else if (err.code === "auth/wrong-password") {
+        Alert.alert("로그인 실패", "비밀번호가 일치하지 않습니다.")
+      } else {
+        Alert.alert("로그인 실패", err.message)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleKakaoLogin = async () => {
     try {
@@ -73,6 +78,7 @@ export default function LoginScreen() {
 
   const handleSignup = () => router.push("/login/SignupScreen")
   const handlePasswordReset = () => router.push("/login/PasswordResetScreen")
+  const handleFirestoreTest = () => router.push("/test")
 
   return (
     <SafeAreaView style={styles.container}>
@@ -141,6 +147,14 @@ export default function LoginScreen() {
               <Text style={styles.linkText}>비밀번호 재설정</Text>
             </TouchableOpacity>
           </View>
+
+          <View style={{ marginTop: 20, alignItems: "center" }}>
+            <TouchableOpacity onPress={handleFirestoreTest}>
+              <Text style={{ color: "#888", textDecorationLine: "underline" }}>
+                🔍 Firestore 연결 테스트
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -149,6 +163,4 @@ export default function LoginScreen() {
       </View>
     </SafeAreaView>
   )
-}
-
 }
