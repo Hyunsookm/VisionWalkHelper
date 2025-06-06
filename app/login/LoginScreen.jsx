@@ -16,7 +16,7 @@ import Icon from "react-native-vector-icons/Feather"
 import { getAuthInstance } from "../../firebase/firebaseConfig"
 import styles from '../styles/styles'
 
-const SERVER_URL = "http://172.30.1.73:3000/kakao-login"
+const SERVER_URL = "http://3.39.142.7:3000/kakao-login"
 
 import { useRouter } from 'expo-router'
 
