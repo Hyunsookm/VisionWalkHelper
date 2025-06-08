@@ -28,24 +28,16 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     try {
-      setLoading(true)
       const auth = getAuthInstance()
-      const email = `${phoneNumber.replace(/-/g, "")}@example.com`
 
-      await signInWithEmailAndPassword(auth, email, password)
+      // 전화번호 → 이메일로 변환 (숫자만 남기고 도메인 추가)
+      const email = phoneNumber.replace(/[^0-9]/g, "") + "@visionwalkhelper.com"
 
-      Alert.alert("로그인 성공")
+      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      Alert.alert("로그인 성공", `UID: ${userCredential.user.uid}`)
       router.replace("/RoleSelectionScreen")
     } catch (err) {
-      if (err.code === "auth/user-not-found") {
-        Alert.alert("로그인 실패", "등록되지 않은 전화번호입니다.")
-      } else if (err.code === "auth/wrong-password") {
-        Alert.alert("로그인 실패", "비밀번호가 일치하지 않습니다.")
-      } else {
-        Alert.alert("로그인 실패", err.message)
-      }
-    } finally {
-      setLoading(false)
+      Alert.alert("로그인 실패", err.message)
     }
   }
 

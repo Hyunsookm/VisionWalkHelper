@@ -42,7 +42,9 @@ export default function SignupPage() {
 
     try {
       const auth = getAuthInstance()
-      const email = `${phoneNumber.replace(/-/g, "")}@example.com` // 전화번호 → 이메일 변환
+
+      // ✅ 전화번호에서 숫자만 추출하고 이메일처럼 변환 (로그인과 일치)
+      const email = phoneNumber.replace(/[^0-9]/g, "") + "@visionwalkhelper.com"
 
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
 
