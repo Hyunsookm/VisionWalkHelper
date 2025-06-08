@@ -6,37 +6,39 @@ buildscript {
     mavenCentral()
   }
   dependencies {
-    classpath('com.android.tools.build:gradle')
-    classpath('com.facebook.react:react-native-gradle-plugin')
-    classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
-    
+    classpath("com.android.tools.build:gradle")
+    classpath("com.facebook.react:react-native-gradle-plugin")
+    classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
   }
 }
 
 def reactNativeAndroidDir = new File(
-  providers.exec {
-    workingDir(rootDir)
-    commandLine("node", "--print", "require.resolve('react-native/package.json')")
-  }.standardOutput.asText.get().trim(),
-  "../android"
+        providers.exec {
+          workingDir(rootDir)
+          commandLine("node", "--print", "require.resolve('react-native/package.json')")
+        }.standardOutput.asText.get().trim(),
+        "../android"
 )
 
 allprojects {
   repositories {
-    maven {
-      // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
-      url(reactNativeAndroidDir)
-      url "https://repository.map.naver.com/archive/maven"
-      url 'https://devrepo.kakao.com/nexus/content/groups/public/' 
-      url 'https://www.jitpack.io'
-    }
+    // 1) RN Android artifacts from local node_modules
+    maven { url = uri(reactNativeAndroidDir) }
 
+    // 2) 구글 & 중앙 Maven (우선순위 높음)
     google()
     mavenCentral()
-  }
 
+    // 3) 네이버 맵 사설 레포
+    maven { url = uri("https://repository.map.naver.com/archive/maven") }
+
+    // 4) 카카오 SDK
+    maven { url = uri("https://devrepo.kakao.com/nexus/content/groups/public/") }
+
+    // 5) (선택) JitPack — 필요하시다면 제일 마지막에만 남겨두세요
+    // maven { url = uri("https://www.jitpack.io") }
+  }
 }
 
 apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"
-

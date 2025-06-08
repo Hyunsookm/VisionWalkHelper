@@ -1,9 +1,9 @@
-// LoginScreen.js
+// app/login/LoginScreen.jsx
 
 "use client";
 
 import * as KakaoLogin from "@react-native-seoul/kakao-login";
-import { signInWithCustomToken } from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithCustomToken } from "firebase/auth";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 import { getAuthInstance, db } from "../../firebase/firebaseConfig";
+import { useRouter } from "expo-router";
 import {
   doc,
   getDoc,
@@ -28,8 +29,6 @@ import styles from "../styles/styles";
 
 const SERVER_URL = "http://3.39.142.7:3000/kakao-login";
 
-import { useRouter } from "expo-router";
-
 export default function LoginScreen() {
   const router = useRouter();
 
@@ -38,31 +37,52 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // 임시: 로컬 로그인 성공 시 역할선택 화면으로 이동
+  // 이메일/비밀번호 로그인
   const handleLogin = async () => {
+    if (!phoneNumber.trim() || !password) {
+      return Alert.alert("입력 오류", "전화번호와 비밀번호를 모두 입력해주세요.");
+    }
+    setLoading(true);
     try {
       const auth = getAuthInstance();
-      const user = auth.currentUser;
-      if (user) {
-        router.replace("/RoleSelectionScreen");
-      } else {
-        Alert.alert("오류", "로그인 정보가 없습니다.");
+      const email = phoneNumber.replace(/[^0-9]/g, "") + "@visionwalkhelper.com";
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const uid = userCredential.user.uid;
+
+      // Firestore 프로필이 없으면 생성
+      const userRef = doc(db, "users", uid);
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) {
+        await setDoc(userRef, {
+          phoneNumber,
+          createdAt: serverTimestamp(),
+          isAdmin: false,
+          role: "",
+          name: ""
+        });
       }
+
+      Alert.alert("로그인 성공");
+      router.replace("/RoleSelectionScreen");
     } catch (err) {
-      Alert.alert("로그인 실패", err.message);
+      let message = err.message;
+      if (err.code === "auth/user-not-found") {
+        message = "등록되지 않은 전화번호입니다.";
+      } else if (err.code === "auth/wrong-password") {
+        message = "비밀번호가 틀렸습니다.";
+      }
+      Alert.alert("로그인 실패", message);
+    } finally {
+      setLoading(false);
     }
   };
-  const handleSignup = () => router.push("/login/SignupScreen");
-  const handlePasswordReset = () => router.push("/login/PasswordResetScreen");
 
+  // 카카오 로그인
   const handleKakaoLogin = async () => {
     setLoading(true);
     try {
-      // 1) 카카오 SDK 로그인 → accessToken 획득
       const kakaoResult = await KakaoLogin.login();
       const accessToken = kakaoResult.accessToken;
-
-      // 2) 서버에 카카오 accessToken 보내어 Firebase customToken 발급 요청
       const response = await fetch(SERVER_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -71,57 +91,30 @@ export default function LoginScreen() {
       if (!response.ok) throw new Error("서버 토큰 발급 실패");
       const { token: firebaseToken } = await response.json();
 
-      // 3) Firebase Auth에 커스텀 토큰으로 로그인
       const auth = getAuthInstance();
       await signInWithCustomToken(auth, firebaseToken);
+      const uid = auth.currentUser.uid;
 
-      // 4) 로그인된 사용자 정보(uid) 가져오기
-      const user = auth.currentUser;
-      if (!user) throw new Error("로그인된 사용자를 찾을 수 없습니다.");
-      const uid = user.uid; // 예: "kakao_4272322626"
-
-      // 5) Firestore에서 users/{uid} 문서 존재 여부 확인
+      // Firestore 프로필 체크/생성
       const userRef = doc(db, "users", uid);
       const userSnap = await getDoc(userRef);
-
       if (!userSnap.exists()) {
-        // 🔥 계정이 존재하지 않으면 → 프로필 문서 및 서브컬렉션 생성
-
-        // 5-1) Firestore에 유저 프로필 문서 생성
-        await setDoc(
-          userRef,
-          {
-            name: "",                // 필요 시 따로 업데이트
-            phoneNumber: phoneNumber, // 로그인 화면 입력값(예시)
-            isAdmin: false,
-            role: "",
-            createdAt: serverTimestamp()
-          },
-          { merge: true }
-        );
-
-        // 5-2) Firestore에 서브컬렉션 account_kakao 생성
-        await setDoc(
-          doc(db, "users", uid, "account_kakao", uid),
-          {
-            kakaoKey: accessToken,
-            linkedAt: serverTimestamp()
-          },
-          { merge: true }
-        );
-
-        // 5-3) Firestore에 서브컬렉션 account_local 빈 문서 생성 (추후 업데이트용)
-        await setDoc(
-          doc(db, "users", uid, "account_local", uid),
-          {
-            localId: "",
-            passwordHash: "",
-            createdAt: serverTimestamp()
-          },
-          { merge: true }
-        );
-
-        // 5-4) Firestore에 샘플용 locations 서브컬렉션 문서 생성 (예시: 빈 좌표 또는 기본값)
+        await setDoc(userRef, {
+          name: "",
+          phoneNumber,
+          isAdmin: false,
+          role: "",
+          createdAt: serverTimestamp()
+        });
+        await setDoc(doc(db, "users", uid, "account_kakao", uid), {
+          kakaoKey: accessToken,
+          linkedAt: serverTimestamp()
+        });
+        await setDoc(doc(db, "users", uid, "account_local", uid), {
+          localId: "",
+          passwordHash: "",
+          createdAt: serverTimestamp()
+        });
         await addDoc(collection(db, "users", uid, "locations"), {
           latitude: 0,
           longitude: 0,
@@ -129,8 +122,7 @@ export default function LoginScreen() {
         });
       }
 
-      // 6) 프로필 및 서브컬렉션 생성 여부에 상관없이, RoleSelectionScreen 으로 이동
-      Alert.alert("로그인 성공");
+      Alert.alert("카카오 로그인 성공");
       router.replace("/RoleSelectionScreen");
     } catch (err) {
       Alert.alert("로그인 실패", err.message);
@@ -139,9 +131,22 @@ export default function LoginScreen() {
     }
   };
 
+  // 🔥 여기를 원하는 경로로 바꿔주세요
+  const handleSignup = () => {
+    // 예: SignInScreen.jsx가 app/SignInScreen.jsx에 있을 때
+    router.push("/SignInScreen");
+    // 만약 app/login/SignInScreen.jsx라면 →
+    // router.push("/login/SignInScreen");
+  };
+
+  const handlePasswordReset = () => {
+    router.push("/login/PasswordResetScreen");
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
+        {/* 로고 */}
         <View style={styles.logoContainer}>
           <Icon name="shopping-cart" size={32} style={styles.logoIcon} />
           <Text style={styles.logoText}>
@@ -150,6 +155,7 @@ export default function LoginScreen() {
           </Text>
         </View>
 
+        {/* 로그인 폼 */}
         <View style={styles.formContainer}>
           <Text style={styles.title}>로그인</Text>
           <Text style={styles.subtitle}>전화번호와 비밀번호를 입력하세요</Text>
@@ -162,7 +168,7 @@ export default function LoginScreen() {
                 value={phoneNumber}
                 onChangeText={setPhoneNumber}
                 keyboardType="phone-pad"
-                placeholder="전화번호 입력란"
+                placeholder="01012345678"
               />
             </View>
           </View>
@@ -175,17 +181,13 @@ export default function LoginScreen() {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
-                placeholder="비밀번호 입력란"
+                placeholder="••••••"
               />
               <TouchableOpacity
                 style={styles.eyeIcon}
-                onPress={() => setShowPassword(!showPassword)}
+                onPress={() => setShowPassword(v => !v)}
               >
-                <Icon
-                  name={showPassword ? "eye-off" : "eye"}
-                  size={20}
-                  color="#999"
-                />
+                <Icon name={showPassword ? "eye-off" : "eye"} size={20} color="#999" />
               </TouchableOpacity>
             </View>
           </View>
@@ -194,8 +196,12 @@ export default function LoginScreen() {
             <TouchableOpacity
               style={styles.loginButton}
               onPress={handleLogin}
+              disabled={loading}
             >
-              <Text style={styles.loginButtonText}>로그인</Text>
+              {loading
+                ? <ActivityIndicator color="#fff" />
+                : <Text style={styles.loginButtonText}>로그인</Text>
+              }
             </TouchableOpacity>
 
             <Text style={styles.orText}>Or connect with social media</Text>
@@ -203,14 +209,12 @@ export default function LoginScreen() {
             <TouchableOpacity
               style={styles.kakaoButton}
               onPress={handleKakaoLogin}
+              disabled={loading}
             >
-              {loading ? (
-                <ActivityIndicator size="small" color="#000" />
-              ) : (
-                <Text style={styles.kakaoButtonText}>
-                  💬 카카오 로그인
-                </Text>
-              )}
+              {loading
+                ? <ActivityIndicator color="#000" />
+                : <Text style={styles.kakaoButtonText}>💬 카카오 로그인</Text>
+              }
             </TouchableOpacity>
           </View>
 

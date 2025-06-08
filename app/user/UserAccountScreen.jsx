@@ -1,3 +1,7 @@
+// app/user/UserAccountScreen.jsx
+
+"use client";
+
 import React, { useState, useEffect } from "react";
 import {
   SafeAreaView,
@@ -7,22 +11,60 @@ import {
   Modal,
   StyleSheet,
   ScrollView,
+  TextInput,
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
-import { getAuthInstance } from "../../firebase/firebaseConfig";
+import { getAuthInstance, db } from "../../firebase/firebaseConfig";
 import { signOut } from "firebase/auth";
+import {
+  doc,
+  setDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 
 export default function UserAccountScreen() {
   const router = useRouter();
-  const [showGuardianList, setShowGuardianList] = useState(false);
-  const [showNoDeviceAlert, setShowNoDeviceAlert] = useState(false);
+
+  // state
+  const [linkedGuardians, setLinkedGuardians] = useState([]);
+  const [unlinkTarget, setUnlinkTarget] = useState(null);
   const [showAuthPopup, setShowAuthPopup] = useState(false);
-  const [authCode] = useState("123456");
+  const [authCode, setAuthCode] = useState("");
   const [timeLeft, setTimeLeft] = useState(180);
 
-  // Auth timer
+  // fetch linked guardians on mount
+  useEffect(() => {
+    const fetchLinked = async () => {
+      try {
+        const auth = getAuthInstance();
+        const uid = auth.currentUser.uid;
+        const q = query(
+          collection(db, "peers"),
+          where("userUid", "==", uid),
+          where("status", "==", "linked")
+        );
+        const snap = await getDocs(q);
+        setLinkedGuardians(
+          snap.docs.map(doc => ({
+            code: doc.id,
+            guardianUid: doc.data().guardianUid
+          }))
+        );
+      } catch (e) {
+        console.error("링크된 보호자 불러오기 실패:", e);
+      }
+    };
+    fetchLinked();
+  }, []);
+
+  // auth timer for code popup
   useEffect(() => {
     let timer;
     if (showAuthPopup && timeLeft > 0) {
@@ -35,18 +77,10 @@ export default function UserAccountScreen() {
     return () => clearTimeout(timer);
   }, [showAuthPopup, timeLeft]);
 
-  const formatTime = (sec) => {
+  const formatTime = sec => {
     const m = Math.floor(sec / 60);
     const s = sec % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  };
-
-  const guardians = ["보호자1", "보호자2"];
-
-  const handleDeviceInfoClick = () => {
-    const hasConnectedDevice = false;
-    if (!hasConnectedDevice) setShowNoDeviceAlert(true);
-    else router.push("/user/DeviceSettingsScreen");
+    return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
   const handleLogout = async () => {
@@ -55,6 +89,52 @@ export default function UserAccountScreen() {
       router.replace("/login/LoginScreen");
     } catch (e) {
       Alert.alert("로그아웃 실패", e.message);
+    }
+  };
+
+  const generateCode = () =>
+    Math.floor(100000 + Math.random() * 900000).toString();
+
+  // open code popup & save pending request
+  const handleAuthPopup = async () => {
+    const newCode = generateCode();
+    setAuthCode(newCode);
+    setTimeLeft(180);
+    setShowAuthPopup(true);
+
+    try {
+      const auth = getAuthInstance();
+      const uid = auth.currentUser.uid;
+      const peerRef = doc(db, "peers", newCode);
+      await setDoc(peerRef, {
+        userUid: uid,
+        code: newCode,
+        status: "pending",
+        createdAt: serverTimestamp(),
+      });
+    } catch (e) {
+      console.error("연동 요청 저장 실패:", e);
+      Alert.alert("오류", "연동 요청을 저장하지 못했습니다.");
+    }
+  };
+
+  // confirm unlink guardian
+  const confirmUnlink = async () => {
+    try {
+      const peerRef = doc(db, "peers", unlinkTarget.code);
+      await updateDoc(peerRef, {
+        status: "pending",
+        guardianUid: "",
+        linkedAt: null,
+      });
+      setLinkedGuardians(prev =>
+        prev.filter(u => u.code !== unlinkTarget.code)
+      );
+      Alert.alert("연동 해제", "보호자 연동이 해제되었습니다.");
+      setUnlinkTarget(null);
+    } catch (e) {
+      console.error("연동 해제 실패:", e);
+      Alert.alert("오류", "연동 해제에 실패했습니다.");
     }
   };
 
@@ -69,75 +149,84 @@ export default function UserAccountScreen() {
         <View style={styles.headerBtn} />
       </View>
 
-      {/* Content */}
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Profile */}
         <View style={styles.profileSection}>
           <Text style={styles.userName}>홍길동</Text>
         </View>
-        <View style={styles.optionList}>
-          <OptionRow label="비밀번호 변경" onPress={() => router.push("/change-password")} />
-          <OptionRow label="보호자 목록" onPress={() => setShowGuardianList(true)} />
-          <OptionRow label="보호자 연동" onPress={() => setShowAuthPopup(true)} />
-          <OptionRow label="연결된 기기 정보" onPress={handleDeviceInfoClick} />
-          <OptionRow label="로그아웃" onPress={handleLogout} />
-        </View>
+
+        {/* Linked Guardians */}
+        <Text style={styles.sectionTitle}>연동된 보호자</Text>
+        {linkedGuardians.length === 0 ? (
+          <Text style={styles.emptyText}>아직 연결된 보호자가 없습니다.</Text>
+        ) : (
+          linkedGuardians.map(u => (
+            <TouchableOpacity
+              key={u.code}
+              style={styles.userCard}
+              onPress={() => setUnlinkTarget(u)}
+            >
+              <View style={styles.userInfo}>
+                <View style={styles.avatar}>
+                  <Feather name="user" size={24} color="#fff" />
+                </View>
+                <Text style={styles.userName}>{u.guardianUid}</Text>
+              </View>
+              <Feather name="chevron-right" size={20} color="#9ca3af" />
+            </TouchableOpacity>
+          ))
+        )}
+
+        {/* Actions */}
+        <TouchableOpacity
+          style={styles.linkButton}
+          onPress={handleAuthPopup}
+        >
+          <Text style={styles.linkButtonText}>보호자 연동</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutButtonText}>로그아웃</Text>
+        </TouchableOpacity>
       </ScrollView>
 
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <NavItem label="기기" icon="shopping-cart" active={false} onPress={() => router.push("/user/DeviceSettingsScreen")} />
-        <NavItem label="계정" icon="user" active={true} onPress={() => router.push("/user/UserAccountScreen")} />
-        <NavItem label="설정" icon="settings" active={false} onPress={() => router.push("/user/UserSettingsScreen")} />
-      </View>
-
-      {/* Guardian List Modal */}
-      <Modal visible={showGuardianList} transparent animationType="fade" onRequestClose={() => setShowGuardianList(false)}>
-        <View style={styles.modalBackdrop}>
+      {/* Unlink Confirmation */}
+      <Modal
+        visible={!!unlinkTarget}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setUnlinkTarget(null)}
+      >
+        <View style={styles.backdrop}>
           <View style={styles.modalBox}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>보호자 목록</Text>
-              <TouchableOpacity onPress={() => setShowGuardianList(false)}>
-                <Feather name="x" size={20} />
-              </TouchableOpacity>
-            </View>
-            {guardians.map((g, i) => (
-              <View key={i} style={styles.modalItem}>
-                <Text style={styles.modalItemText}>{g}</Text>
-              </View>
-            ))}
-            <TouchableOpacity style={[styles.modalBtn, styles.modalBtnOutline]} onPress={() => setShowGuardianList(false)}>
-              <Text style={[styles.modalBtnText, styles.modalBtnTextOutline]}>닫기</Text>
+            <Text style={styles.modalTitle}>연동 해제</Text>
+            <Text style={styles.modalMessage}>
+              보호자({unlinkTarget?.guardianUid})를 연동 해제하시겠습니까?
+            </Text>
+            <TouchableOpacity
+              style={[styles.confirmBtn, styles.unlinkBtn]}
+              onPress={confirmUnlink}
+            >
+              <Text style={styles.confirmBtnText}>연동 해제</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* No Device Alert Modal */}
-      <Modal visible={showNoDeviceAlert} transparent animationType="fade" onRequestClose={() => setShowNoDeviceAlert(false)}>
-        <View style={styles.modalBackdrop}>
+      {/* Auth Code Popup */}
+      <Modal
+        visible={showAuthPopup}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAuthPopup(false)}
+      >
+        <View style={styles.backdrop}>
           <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>알림</Text>
-            <Text style={styles.modalMessage}>연동된 기기가 없습니다</Text>
-            <TouchableOpacity style={styles.modalBtn} onPress={() => setShowNoDeviceAlert(false)}>
-              <Text style={styles.modalBtnText}>확인</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Auth Code Popup Modal */}
-      <Modal visible={showAuthPopup} transparent animationType="fade" onRequestClose={() => setShowAuthPopup(false)}>
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalBox}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>연동 인증번호</Text>
-              <TouchableOpacity onPress={() => setShowAuthPopup(false)}>
-                <Feather name="x" size={20} />
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.modalTitle}>연동 인증번호</Text>
             <Text style={styles.authCodeText}>{authCode}</Text>
             <Text style={styles.authTimer}>{formatTime(timeLeft)}</Text>
-            <Text style={styles.authText}>보호자 화면에 인증번호를 입력하세요</Text>
+            <Text style={styles.authText}>
+              보호자 화면에 인증번호를 입력하세요
+            </Text>
           </View>
         </View>
       </Modal>
@@ -145,52 +234,97 @@ export default function UserAccountScreen() {
   );
 }
 
-function OptionRow({ label, onPress }) {
-  return (
-    <TouchableOpacity style={styles.row} onPress={onPress}>
-      <Text style={styles.rowText}>{label}</Text>
-      <Feather name="chevron-right" size={20} />
-    </TouchableOpacity>
-  );
-}
-
-function NavItem({ label, icon, active, onPress }) {
-  return (
-    <TouchableOpacity style={[styles.navItem, active && styles.navItemActive]} onPress={onPress}>
-      <Feather name={icon} size={24} color={active ? "#000" : "#6b7280"} />
-      <Text style={[styles.navText, active && styles.navTextActive]}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f9fafb" },
-  header: { height: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: "#e5e7eb", backgroundColor: "#fff" },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    height: 56,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
+    backgroundColor: "#fff",
+  },
   headerBtn: { width: 32, alignItems: "center" },
   headerTitle: { fontSize: 18, fontWeight: "600" },
-  content: { padding: 16 },
+  content: { padding: 24 },
   profileSection: { marginBottom: 24 },
   userName: { fontSize: 24, fontWeight: "700" },
-  optionList: { backgroundColor: "#fff", borderRadius: 8, overflow: "hidden" },
-  row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 16, borderBottomWidth: 1, borderBottomColor: "#e5e7eb", backgroundColor: "#fff" },
-  rowText: { fontSize: 18, fontWeight: "500" },
-  bottomNav: { flexDirection: "row", borderTopWidth: 1, borderTopColor: "#e5e7eb", backgroundColor: "#fff" },
-  navItem: { flex: 1, alignItems: "center", padding: 8 },
-  navItemActive: { backgroundColor: "#f3f4f6" },
-  navText: { fontSize: 12, color: "#6b7280", marginTop: 4 },
-  navTextActive: { color: "#22c55e" },
-  modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", padding: 16 },
-  modalBox: { width: "100%", maxWidth: 320, backgroundColor: "#fff", borderRadius: 8, padding: 24 },
-  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontWeight: "600" },
-  modalMessage: { fontSize: 16, color: "#4B5563", textAlign: "center", marginBottom: 24 },
-  modalItem: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#e5e7eb" },
-  modalItemText: { fontSize: 16 },
-  modalBtn: { backgroundColor: "#22c55e", padding: 12, borderRadius: 6, alignItems: "center" },
-  modalBtnOutline: { backgroundColor: "transparent", borderWidth: 1, borderColor: "#22c55e" },
-  modalBtnText: { color: "#fff", fontSize: 16, fontWeight: "500" },
-  modalBtnTextOutline: { color: "#22c55e" },
-  authCodeText: { fontSize: 20, fontWeight: "700", color: "#3b82f6", marginBottom: 8 },
-  authTimer: { fontSize: 18, fontWeight: "600", color: "#ef4444", marginBottom: 8 },
-  authText: { fontSize: 14, color: "#4B5563", textAlign: "center" }
+  sectionTitle: { fontSize: 16, fontWeight: "600", marginBottom: 12 },
+  emptyText: { color: "#6b7280", marginBottom: 16 },
+  userCard: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#ecfdf5",
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+  },
+  userInfo: { flexDirection: "row", alignItems: "center" },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#000",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  linkButton: {
+    backgroundColor: "#22c55e",
+    borderRadius: 8,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginTop: 16,
+  },
+  linkButtonText: { color: "#fff", fontSize: 18, fontWeight: "500" },
+  logoutButton: {
+    backgroundColor: "#ef4444",
+    borderRadius: 8,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginTop: 12,
+  },
+  logoutButtonText: { color: "#fff", fontSize: 18, fontWeight: "500" },
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+  },
+  modalBox: {
+    width: "100%",
+    maxWidth: 320,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    padding: 24,
+    alignItems: "center",
+  },
+  modalTitle: { fontSize: 18, fontWeight: "600", marginBottom: 12 },
+  modalMessage: { fontSize: 16, marginBottom: 24, textAlign: "center" },
+  confirmBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 6,
+    alignItems: "center",
+    backgroundColor: "#22c55e",
+  },
+  unlinkBtn: { backgroundColor: "#dc2626", width: "100%" },
+  confirmBtnText: { fontSize: 16, fontWeight: "500", color: "#fff" },
+  authCodeText: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#3b82f6",
+    marginBottom: 8,
+  },
+  authTimer: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#ef4444",
+    marginBottom: 8,
+  },
+  authText: { fontSize: 14, color: "#4B5563", textAlign: "center" },
 });

@@ -1,3 +1,7 @@
+// app/guardian/GuardianScreen.jsx
+
+"use client";
+
 import { useRouter } from "expo-router";
 import { Alert, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
@@ -7,27 +11,28 @@ export default function GuardianScreen() {
 
   const handleUser1 = () => {
     router.push("/map/map");
-  }
+  };
 
   const handleUser2 = () => {
-    Alert.alert("알림", "사용자 2의 상세 정보를 확인합니다.")
-  }
+    Alert.alert("알림", "사용자 2의 상세 정보를 확인합니다.");
+  };
 
+  // ✨ 새 사용자 연결 버튼 → AccountLinkScreen으로 이동
   const handleAddUser = () => {
-    Alert.alert("알림", "새 사용자 연결 페이지로 이동합니다.")
-  }
+    router.push("/guardian/AccountLinkScreen");
+  };
 
   const handleLocationNav = () => {
-    router.push("/guardian/GuardianScreen")
-  }
+    router.push("/guardian/GuardianScreen");
+  };
 
   const handleAccountNav = () => {
-    router.push("/guardian/AccountLinkScreen")
-  }
+    router.push("/guardian/AccountLinkScreen");
+  };
 
   const handleSettingsNav = () => {
-    router.push("/guardian/GuardianSettingsScreen")
-  }
+    router.push("/guardian/GuardianSettingsScreen");
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -71,7 +76,10 @@ export default function GuardianScreen() {
 
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
-        <TouchableOpacity style={[styles.navItem, styles.activeNavItem]} onPress={handleLocationNav}>
+        <TouchableOpacity
+          style={[styles.navItem, styles.activeNavItem]}
+          onPress={handleLocationNav}
+        >
           <Icon name="shopping-cart" size={24} style={styles.navIcon} />
           <Text style={styles.navText}>위치 확인</Text>
         </TouchableOpacity>
@@ -87,7 +95,7 @@ export default function GuardianScreen() {
         </TouchableOpacity>
       </View>
     </SafeAreaView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -116,7 +124,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 24,
   },
-
+  userList: {
+    marginBottom: 24,
+  },
   userCard: {
     flexDirection: "row",
     justifyContent: "space-between",

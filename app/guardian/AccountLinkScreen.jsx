@@ -1,6 +1,8 @@
 // app/guardian/AccountLinkScreen.jsx
 
-import React, { useState } from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import {
   SafeAreaView,
   View,
@@ -10,30 +12,107 @@ import {
   StyleSheet,
   TextInput,
   Alert,
+  ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
+import { getAuthInstance, db } from "../../firebase/firebaseConfig";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  serverTimestamp,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 
 export default function AccountLinkScreen() {
   const router = useRouter();
-  const users = ["사용자 1", "사용자 2"];
-  
-  // 모달 상태
   const [unlinkTarget, setUnlinkTarget] = useState(null);
   const [showCodeModal, setShowCodeModal] = useState(false);
   const [code, setCode] = useState("");
+  const [linkedUsers, setLinkedUsers] = useState([]);
 
-  // 연동 해제 확인
-  const confirmUnlink = () => {
-    Alert.alert("알림", `${unlinkTarget}의 연동이 해제되었습니다.`);
-    setUnlinkTarget(null);
+  // Firestore에서 연동된 사용자들 불러오기
+  useEffect(() => {
+    const fetchLinked = async () => {
+      try {
+        const auth = getAuthInstance();
+        const guardianUid = auth.currentUser.uid;
+
+        const q = query(
+          collection(db, "peers"),
+          where("guardianUid", "==", guardianUid),
+          where("status", "==", "linked")
+        );
+        const snap = await getDocs(q);
+        const users = snap.docs.map(doc => ({
+          code: doc.id,
+          userUid: doc.data().userUid
+        }));
+        setLinkedUsers(users);
+      } catch (e) {
+        console.error("링크된 사용자 불러오기 실패:", e);
+      }
+    };
+    fetchLinked();
+  }, []);
+
+  // 연동 해제
+  const confirmUnlink = async () => {
+    try {
+      const peerRef = doc(db, "peers", unlinkTarget.code);
+      await updateDoc(peerRef, {
+        status: "pending",    // 또는 삭제: deleteDoc
+        guardianUid: "",
+        linkedAt: null,
+      });
+      Alert.alert("알림", `${unlinkTarget.userUid}의 연동이 해제되었습니다.`);
+      setUnlinkTarget(null);
+      // 목록 갱신
+      setLinkedUsers(prev => prev.filter(u => u.code !== unlinkTarget.code));
+    } catch (e) {
+      console.error("연동 해제 실패:", e);
+      Alert.alert("오류", "연동 해제에 실패했습니다.");
+    }
   };
 
-  // 연동 코드 확인
-  const confirmLink = () => {
-    Alert.alert("연동 코드", `입력하신 코드: ${code}`);
-    setCode("");
-    setShowCodeModal(false);
+  // 연동 코드 입력 & Firestore 업데이트
+  const confirmLink = async () => {
+    if (!code.trim()) {
+      return Alert.alert("알림", "코드를 입력해주세요.");
+    }
+    try {
+      const peerRef = doc(db, "peers", code.trim());
+      const snap = await getDoc(peerRef);
+      if (!snap.exists() || snap.data().status !== "pending") {
+        throw new Error("유효한 요청이 아닙니다.");
+      }
+
+      const auth = getAuthInstance();
+      const guardianUid = auth.currentUser.uid;
+
+      await updateDoc(peerRef, {
+        guardianUid,
+        status: "linked",
+        linkedAt: serverTimestamp(),
+      });
+
+      // 연동된 사용자 목록에 추가
+      setLinkedUsers(prev => [
+        ...prev,
+        { code: code.trim(), userUid: snap.data().userUid }
+      ]);
+
+      Alert.alert("연동 성공", `사용자(${snap.data().userUid})와 연결되었습니다.`);
+      setCode("");
+      setShowCodeModal(false);
+    } catch (err) {
+      console.error("연동 실패:", err);
+      Alert.alert("연동 실패", err.message);
+    }
   };
 
   return (
@@ -49,35 +128,97 @@ export default function AccountLinkScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Content */}
-      <View style={styles.content}>
-        {/* 연동된 사용자 리스트 */}
-        <View style={styles.userList}>
-          {users.map((u) => (
-            <TouchableOpacity
-              key={u}
-              style={styles.userCard}
-              onPress={() => setUnlinkTarget(u)}
-            >
-              <View style={styles.userInfo}>
-                <View style={styles.avatar}>
-                  <Feather name="user" size={24} color="#fff" />
-                </View>
-                <Text style={styles.userName}>{u}</Text>
+      <ScrollView contentContainerStyle={styles.content}>
+        {/* 기존 ‘연동된 사용자’ */}
+        <Text style={styles.sectionTitle}>연동된 사용자</Text>
+        {linkedUsers.length === 0 && (
+          <Text style={styles.emptyText}>아직 연결된 사용자가 없습니다.</Text>
+        )}
+        {linkedUsers.map((u) => (
+          <TouchableOpacity
+            key={u.code}
+            style={styles.userCard}
+            onPress={() => setUnlinkTarget(u)}
+          >
+            <View style={styles.userInfo}>
+              <View style={styles.avatar}>
+                <Feather name="user" size={24} color="#fff" />
               </View>
-              <Feather name="chevron-right" size={20} color="#9ca3af" />
-            </TouchableOpacity>
-          ))}
-        </View>
+              <Text style={styles.userName}>{u.userUid}</Text>
+            </View>
+            <Feather name="chevron-right" size={20} color="#9ca3af" />
+          </TouchableOpacity>
+        ))}
 
-        {/* 계정 연동 버튼 (리스트 아래) */}
+        {/* 계정 연동 버튼 */}
         <TouchableOpacity
           style={styles.linkButton}
           onPress={() => setShowCodeModal(true)}
         >
           <Text style={styles.linkButtonText}>계정 연동</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
+
+      {/* 연동 해제 Modal */}
+      <Modal
+        visible={!!unlinkTarget}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setUnlinkTarget(null)}
+      >
+        <View style={styles.backdrop}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>연동 해제</Text>
+            <Text style={styles.modalMessage}>
+              {unlinkTarget?.userUid}님의 연동을 해제하시겠습니까?
+            </Text>
+            <TouchableOpacity
+              style={[styles.confirmBtn, styles.unlinkBtn]}
+              onPress={confirmUnlink}
+            >
+              <Text style={[styles.confirmBtnText, styles.unlinkBtnText]}>
+                연동 해제
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 연동 코드 입력 Modal */}
+      <Modal
+        visible={showCodeModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCodeModal(false)}
+      >
+        <View style={styles.backdrop}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>연동 코드 입력</Text>
+            <TextInput
+              style={styles.codeInput}
+              placeholder="코드를 입력하세요"
+              value={code}
+              onChangeText={setCode}
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.confirmBtn, styles.actionBtn]}
+                onPress={confirmLink}
+              >
+                <Text style={styles.confirmBtnText}>확인</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmBtn, styles.cancelBtn]}
+                onPress={() => setShowCodeModal(false)}
+              >
+                <Text style={[styles.confirmBtnText, styles.cancelText]}>
+                  취소
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
@@ -100,80 +241,10 @@ export default function AccountLinkScreen() {
           onPress={() => router.push("/guardian/GuardianSettingsScreen")}
         />
       </View>
-
-      {/* 연동 해제 Confirmation Modal */}
-      {unlinkTarget && (
-        <Modal
-          visible
-          transparent
-          animationType="fade"
-          onRequestClose={() => setUnlinkTarget(null)}
-        >
-          <View style={styles.backdrop}>
-            <View style={styles.modalBox}>
-              <TouchableOpacity
-                style={styles.modalClose}
-                onPress={() => setUnlinkTarget(null)}
-              >
-                <Feather name="x" size={20} />
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>연동을 해제하시겠습니까?</Text>
-              <Text style={styles.modalUser}>{unlinkTarget}</Text>
-              <TouchableOpacity
-                style={[styles.confirmBtn, styles.unlinkBtn]}
-                onPress={confirmUnlink}
-              >
-                <Text style={[styles.confirmBtnText, styles.unlinkBtnText]}>
-                  연동 해제
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-      )}
-
-      {/* 연동 코드 입력 Modal */}
-      {showCodeModal && (
-        <Modal
-          visible
-          transparent
-          animationType="fade"
-          onRequestClose={() => setShowCodeModal(false)}
-        >
-          <View style={styles.backdrop}>
-            <View style={styles.modalBox}>
-              <Text style={styles.modalTitle}>연동 코드 입력</Text>
-              <TextInput
-                style={styles.codeInput}
-                placeholder="코드를 입력하세요"
-                value={code}
-                onChangeText={setCode}
-              />
-              <View style={styles.modalActions}>
-                <TouchableOpacity
-                  style={[styles.confirmBtn, styles.actionBtn]}
-                  onPress={confirmLink}
-                >
-                  <Text style={styles.confirmBtnText}>확인</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.confirmBtn, styles.cancelBtn]}
-                  onPress={() => setShowCodeModal(false)}
-                >
-                  <Text style={[styles.confirmBtnText, styles.cancelText]}>
-                    취소
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
-      )}
     </SafeAreaView>
   );
 }
 
-// NavItem
 function NavItem({ label, icon, active, onPress }) {
   return (
     <TouchableOpacity
@@ -183,7 +254,7 @@ function NavItem({ label, icon, active, onPress }) {
       <Feather
         name={icon}
         size={24}
-        color={active ? "#000000" : "#000000"}
+        color={active ? "#000000" : "#6b7280"}
       />
       <Text style={[styles.navText, active && styles.navTextActive]}>
         {label}
@@ -207,9 +278,10 @@ const styles = StyleSheet.create({
   headerBtn: { width: 32, alignItems: "center" },
   headerTitle: { fontSize: 18, fontWeight: "600" },
 
-  content: { flex: 1,     paddingHorizontal: 24,
-    paddingVertical: 24 },
-  userList: {},
+  content: { padding: 24 },
+  sectionTitle: { fontSize: 16, fontWeight: "600", marginBottom: 12 },
+  emptyText: { color: "#6b7280", marginBottom: 16 },
+
   userCard: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -217,7 +289,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ecfdf5",
     borderRadius: 8,
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   userInfo: { flexDirection: "row", alignItems: "center" },
   avatar: {
@@ -235,20 +307,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#22c55e",
     borderRadius: 8,
     paddingVertical: 16,
-    alignItems: "center"
+    alignItems: "center",
+    marginTop: 16,
   },
   linkButtonText: { color: "#fff", fontSize: 18, fontWeight: "500" },
-
-  bottomNav: {
-    flexDirection: "row",
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-    backgroundColor: "#fff",
-  },
-  navItem: { flex: 1, alignItems: "center", paddingVertical: 8 },
-  navItemActive: { backgroundColor: "#f3f4f6" },
-  navText: { fontSize: 12, color: "#000000", marginTop: 4 },
-  navTextActive: { color: "#000000" },
 
   backdrop: {
     flex: 1,
@@ -263,28 +325,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 8,
     padding: 24,
-    alignItems: "center",
   },
-  modalClose: { alignSelf: "flex-end" },
-  modalTitle: { fontSize: 18, fontWeight: "600", marginBottom: 16 },
-  modalUser: { fontSize: 18, color: "#dc2626", marginBottom: 24 },
+  modalTitle: { fontSize: 18, fontWeight: "600", marginBottom: 12 },
+  modalMessage: { fontSize: 16, marginBottom: 24, textAlign: "center" },
 
   confirmBtn: {
+    flex: 1,
     paddingVertical: 12,
-    paddingHorizontal: 32,
     borderRadius: 6,
+    alignItems: "center",
+    backgroundColor: "#22c55e",
   },
-  confirmBtnText: { fontSize: 16, fontWeight: "500" },
+  unlinkBtn: { backgroundColor: "#dc2626", marginTop: 12 },
+  confirmBtnText: { fontSize: 16, fontWeight: "500", color: "#fff" },
+  cancelText: { color: "#22c55e" },
 
-  // 해제(삭제) 버튼
-  unlinkBtn: {
-    backgroundColor: "#dc2626",
-  },
-  unlinkBtnText: {
-    color: "#fff",
-  },
-
-  // 코드 입력 모달용
   codeInput: {
     width: "100%",
     borderWidth: 1,
@@ -296,14 +351,16 @@ const styles = StyleSheet.create({
   modalActions: {
     flexDirection: "row",
     justifyContent: "space-between",
-    width: "100%",
   },
-  actionBtn: { flex: 1 },
-  cancelBtn: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#22c55e",
-    marginLeft: 12,
+
+  bottomNav: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
+    backgroundColor: "#fff",
   },
-  cancelText: { color: "#22c55e" },
+  navItem: { flex: 1, alignItems: "center", padding: 8 },
+  navItemActive: { backgroundColor: "#f3f4f6" },
+  navText: { fontSize: 12, color: "#6b7280", marginTop: 4 },
+  navTextActive: { color: "#000000" },
 });

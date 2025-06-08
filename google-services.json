@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "759107664620",
+    "project_id": "visionwalkhelper",
+    "storage_bucket": "visionwalkhelper.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:759107664620:android:89c9b7eb1d6574c1a403c9",
+        "android_client_info": {
+          "package_name": "com.capstone.visionwalkhelper"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB1DApReaiIjn3XgRQdx3qARwARcNLPbKc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
