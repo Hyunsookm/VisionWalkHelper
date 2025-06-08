@@ -1,6 +1,10 @@
-// utils/ble/startDeviceScanAndConnect.js
 import { Alert } from 'react-native';
 import bleManager from './bleManager';
+import { Buffer } from 'buffer';
+
+const SERVICE_UUID = '87654321-1234-5678-1234-56789abcdef0'; // 실제 UUID로 교체
+const CHARACTERISTIC_UUID = 'fedcba01-1234-5678-1234-56789abcdef0'; // 실제 UUID로 교체
+const WRITE_DATA = Buffer.from('mysecret').toString('base64'); // 'SGVsbG8='
 
 export const startDeviceScanAndConnect = (onDeviceConnected) => {
   let timeoutId = null;
@@ -15,8 +19,8 @@ export const startDeviceScanAndConnect = (onDeviceConnected) => {
     console.log('🔍 탐지:', device?.name, device?.localName, device?.id);
 
     if (
-      device?.name?.includes('TestBLE') ||
-      device?.localName?.includes('TestBLE')
+      device?.name?.includes('VisionWalkHelper') ||
+      device?.localName?.includes('VisionWalkHelper')
     ) {
       console.log('🎯 대상 장치 발견:', device.name || device.localName);
       bleManager.stopDeviceScan();
@@ -24,15 +28,19 @@ export const startDeviceScanAndConnect = (onDeviceConnected) => {
 
       try {
         const isConnected = await device.isConnected();
-        if (!isConnected) {
-          const connectedDevice = await device.connect();
-          await connectedDevice.discoverAllServicesAndCharacteristics();
-          console.log('✅ 연결 성공:', connectedDevice.id);
-          onDeviceConnected(connectedDevice);
-        } else {
-          console.log('⚠️ 이미 연결된 장치');
-          onDeviceConnected(device);
-        }
+        const connectedDevice = isConnected ? device : await device.connect();
+        await connectedDevice.discoverAllServicesAndCharacteristics();
+        console.log('✅ 연결 성공:', connectedDevice.id);
+
+        // 🔽 Write 요청
+        await connectedDevice.writeCharacteristicWithResponseForService(
+          SERVICE_UUID,
+          CHARACTERISTIC_UUID,
+          WRITE_DATA
+        );
+        console.log('✍️ Write 요청 성공:', WRITE_DATA);
+
+        onDeviceConnected(connectedDevice);
       } catch (connectErr) {
         console.error('❌ 연결 실패:', connectErr.message);
         Alert.alert('연결 실패', connectErr.message);

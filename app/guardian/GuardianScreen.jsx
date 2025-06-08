@@ -22,7 +22,7 @@ export default function GuardianScreen() {
   }
 
   const handleAccountNav = () => {
-    router.push("/guardian/GuardianAccountScreen")
+    router.push("/guardian/AccountLinkScreen")
   }
 
   const handleSettingsNav = () => {
@@ -106,6 +106,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   headerTitle: {
+    flex: 1,
+    textAlign: "center",
     fontSize: 18,
     fontWeight: "600",
   },
@@ -114,9 +116,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 24,
   },
-  userList: {
-    marginBottom: 32,
-  },
+
   userCard: {
     flexDirection: "row",
     justifyContent: "space-between",

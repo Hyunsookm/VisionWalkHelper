@@ -1,8 +1,21 @@
+// DeviceSettingsScreen.jsx
+
 import { useRouter } from "expo-router";
-import { Alert, Button, PermissionsAndroid, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  PermissionsAndroid,
+  Platform,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 import { checkBLEStatus } from "../../utils/ble/checkStatus";
 import { startDeviceScanAndConnect } from "../../utils/ble/startDeviceScanAndConnect";
+import bleManager from "../../utils/ble/bleManager";
+import { useEffect, useCallback } from "react";
 
 const requestBLEPermissions = async () => {
   if (Platform.OS === "android") {
@@ -25,24 +38,46 @@ const requestBLEPermissions = async () => {
   }
 };
 
-const handleBLEConnect = async () => {
-  try {
-    await requestBLEPermissions();
-    await checkBLEStatus();
-
-    startDeviceScanAndConnect((connectedDevice) => {
-      Alert.alert("연결 성공", `장치: ${connectedDevice.name || "알 수 없음"}`);
-    });
-  } catch (err) {
-    Alert.alert("BLE 연결 실패", err.message);
-  }
-};
-
 export default function DeviceSettingsScreen() {
   const router = useRouter();
 
-  const handleDeviceConnection = () => {
-    router.push("/user/DeviceDetailScreen");
+  // 1) BLE 연결된 기기 조회: 권한/상태 확인 후 실행
+  const checkAlreadyConnected = useCallback(async () => {
+    try {
+      // 권한 요청 및 BLE 상태 확인
+      await requestBLEPermissions();
+      await checkBLEStatus();
+
+      // 빈 배열을 전달해서 현재 연결된 모든 기기 조회
+      const connected = await bleManager.connectedDevices([]);
+      if (connected.length > 0) {
+        const deviceId = connected[0].id;
+        // 문자열 경로로만 replace
+        router.replace(`/user/${deviceId}`);
+      }
+    } catch (err) {
+      console.error("이미 연결된 기기 조회 실패:", err);
+      // 권한이나 BLE 상태 오류일 수 있으니, 화면 멈춤 없이 경고만 띄우기
+      Alert.alert("오류", "이미 연결된 기기 조회 중 문제가 발생했습니다.");
+    }
+  }, [router]);
+
+  useEffect(() => {
+    checkAlreadyConnected();
+  }, [checkAlreadyConnected]);
+
+  // 2) BLE 연결 버튼 눌렀을 때 스캔 & 연결
+  const handleBLEConnect = async () => {
+    try {
+      await requestBLEPermissions();
+      await checkBLEStatus();
+
+      startDeviceScanAndConnect((connectedDevice) => {
+        router.push(`/user/${connectedDevice.id}`);
+      });
+    } catch (err) {
+      Alert.alert("BLE 연결 실패", err.message);
+    }
   };
 
   return (
@@ -56,16 +91,17 @@ export default function DeviceSettingsScreen() {
 
       <View style={styles.content}>
         <View style={styles.messageContainer}>
-          <Text style={styles.messageText}>아직 연동된 기기가{"\n"}없습니다~</Text>
+          <Text style={styles.messageText}>
+            아직 연동된 기기가{"\n"}없습니다~
+          </Text>
         </View>
 
-        <TouchableOpacity style={styles.connectButton} onPress={handleDeviceConnection}>
-          <Text style={styles.connectButtonText}>기기 연동하기</Text>
+        <TouchableOpacity
+          style={styles.connectButton}
+          onPress={handleBLEConnect}
+        >
+          <Text style={styles.connectButtonText}>BLE 장치 연결</Text>
         </TouchableOpacity>
-
-        <View style={{ marginTop: 16 }}>
-          <Button title="BLE 장치 연결" onPress={handleBLEConnect} color="#22c55e" />
-        </View>
       </View>
 
       <View style={styles.bottomNav}>
@@ -77,12 +113,18 @@ export default function DeviceSettingsScreen() {
           <Text style={styles.navText}>기기</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push("/user/UserAccountScreen")}>
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => router.push("/user/UserAccountScreen")}
+        >
           <Icon name="user" size={24} style={styles.navIcon} />
           <Text style={styles.navText}>계정</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push("/SettingsScreen")}>
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => router.push("/user/UserSettingsScreen")}
+        >
           <Icon name="settings" size={24} style={styles.navIcon} />
           <Text style={styles.navText}>설정</Text>
         </TouchableOpacity>
@@ -107,6 +149,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   headerTitle: {
+    flex: 1,
+    textAlign: "center",
     fontSize: 18,
     fontWeight: "600",
   },
