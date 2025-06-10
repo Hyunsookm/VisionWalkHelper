@@ -13,6 +13,9 @@ import { Feather } from "@expo/vector-icons";
 import { Switch as RNSwitch } from "react-native";
 import { getAuthInstance, db } from "../../firebase/firebaseConfig";
 import { doc, updateDoc } from "firebase/firestore";
+import Icon from "react-native-vector-icons/Feather";
+import { signOut } from "firebase/auth";
+
 
 export default function GuardianSettingsScreen() {
   const router = useRouter();
@@ -32,6 +35,15 @@ export default function GuardianSettingsScreen() {
       Alert.alert("업데이트 실패", e.message);
     }
   };
+  // 로그아웃 핸들러
+  const handleLogout = async () => {
+    try {
+      await signOut(getAuthInstance());
+      router.replace("/login/LoginScreen");
+    } catch (e) {
+      Alert.alert("로그아웃 실패", e.message);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -46,6 +58,12 @@ export default function GuardianSettingsScreen() {
 
       {/* ───────── Content ───────── */}
       <View style={styles.container}>
+        {/* 로그아웃 버튼 */}
+        <TouchableOpacity style={styles.row} onPress={handleLogout}>
+          <Text style={styles.rowText}>로그아웃</Text>
+          <Feather name="chevron-right" size={20} color="#000" />
+        </TouchableOpacity>
+
         {/* 메인화면으로 가기 */}
         <TouchableOpacity style={styles.row} onPress={handleGoMain}>
           <Text style={styles.rowText}>메인화면으로 가기</Text>
@@ -72,24 +90,29 @@ export default function GuardianSettingsScreen() {
 
       {/* ───────── Bottom Navigation ───────── */}
       <View style={styles.bottomNav}>
-        <NavItem
-          label="기기"
-          icon="shopping-cart"
-          active={false}
-          onPress={() => router.push("/guardian/DeviceSettingsScreen")}
-        />
-        <NavItem
-          label="계정"
-          icon="user"
-          active={false}
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => router.push("/guardian/GuardianScreen")}
+        >
+          <Icon name="shopping-cart" size={24} style={styles.navIcon} />
+          <Text style={styles.navText}>기기</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.navItem}
           onPress={() => router.push("/guardian/AccountLinkScreen")}
-        />
-        <NavItem
-          label="설정"
-          icon="settings"
-          active={true}
-          onPress={() => router.push("/setting/GuardianSettingsScreen")}
-        />
+        >
+          <Icon name="user" size={24} style={styles.navIcon} />
+          <Text style={styles.navText}>계정</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.navItem, styles.activeNavItem]}
+          onPress={() => router.push("/guardian/GuardianSettingsScreen")}
+        >
+          <Icon name="settings" size={24} style={styles.navIcon} />
+          <Text style={styles.navText}>설정</Text>
+        </TouchableOpacity>
       </View>
 
       {/* ───────── More Info Modal ───────── */}
@@ -123,15 +146,6 @@ export default function GuardianSettingsScreen() {
   );
 }
 
-// ───────── NavItem 컴포넌트 ─────────
-function NavItem({ label, icon, active, onPress }) {
-  return (
-    <TouchableOpacity style={[styles.navItem, active && styles.navItemActive]} onPress={onPress}>
-      <Feather name={icon} size={24} color={active ? "#000000" : "#6b7280"} />
-      <Text style={[styles.navText, active && styles.navTextActive]}> {label} </Text>
-    </TouchableOpacity>
-  );
-}
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -185,8 +199,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 8,
   },
-  navItemActive: {
+    activeNavItem: {
     backgroundColor: "#f3f4f6",
+    borderRadius: 8,
   },
   navText: {
     fontSize: 12,

@@ -27,6 +27,7 @@ import {
   where,
   getDocs,
 } from "firebase/firestore";
+import Icon from "react-native-vector-icons/Feather";
 
 export default function AccountLinkScreen() {
   const router = useRouter();
@@ -220,48 +221,35 @@ export default function AccountLinkScreen() {
         </View>
       </Modal>
 
-      {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
-        <NavItem
-          label="위치 확인"
-          icon="shopping-cart"
-          active={false}
+        <TouchableOpacity
+          style={styles.navItem}
           onPress={() => router.push("/guardian/GuardianScreen")}
-        />
-        <NavItem
-          label="계정"
-          icon="user"
-          active={true}
+        >
+          <Icon name="shopping-cart" size={24} style={styles.navIcon} />
+          <Text style={styles.navText}>기기</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.navItem, styles.activeNavItem]}
           onPress={() => router.push("/guardian/AccountLinkScreen")}
-        />
-        <NavItem
-          label="설정"
-          icon="settings"
-          active={false}
+        >
+          <Icon name="user" size={24} style={styles.navIcon} />
+          <Text style={styles.navText}>계정</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.navItem}
           onPress={() => router.push("/guardian/GuardianSettingsScreen")}
-        />
+        >
+          <Icon name="settings" size={24} style={styles.navIcon} />
+          <Text style={styles.navText}>설정</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
 
-function NavItem({ label, icon, active, onPress }) {
-  return (
-    <TouchableOpacity
-      style={[styles.navItem, active && styles.navItemActive]}
-      onPress={onPress}
-    >
-      <Feather
-        name={icon}
-        size={24}
-        color={active ? "#000000" : "#6b7280"}
-      />
-      <Text style={[styles.navText, active && styles.navTextActive]}>
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-}
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f9fafb" },
@@ -338,7 +326,14 @@ const styles = StyleSheet.create({
   },
   unlinkBtn: { backgroundColor: "#dc2626", marginTop: 12 },
   confirmBtnText: { fontSize: 16, fontWeight: "500", color: "#fff" },
-  cancelText: { color: "#22c55e" },
+  cancelText: { color: "#fff" },
+  cancelBtn:{
+          flex: 1,
+    paddingVertical: 12,
+    borderRadius: 6,
+    alignItems: "center",
+    backgroundColor: "#dc2626",
+  },
 
   codeInput: {
     width: "100%",
@@ -360,7 +355,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   navItem: { flex: 1, alignItems: "center", padding: 8 },
-  navItemActive: { backgroundColor: "#f3f4f6" },
   navText: { fontSize: 12, color: "#6b7280", marginTop: 4 },
   navTextActive: { color: "#000000" },
+    activeNavItem: {
+    backgroundColor: "#f3f4f6",
+    borderRadius: 8,
+  },
 });

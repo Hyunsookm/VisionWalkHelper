@@ -134,7 +134,7 @@ export default function LoginScreen() {
   // 🔥 여기를 원하는 경로로 바꿔주세요
   const handleSignup = () => {
     // 예: SignInScreen.jsx가 app/SignInScreen.jsx에 있을 때
-    router.push("/SignInScreen");
+    router.push("/login/SignInScreen");
     // 만약 app/login/SignInScreen.jsx라면 →
     // router.push("/login/SignInScreen");
   };

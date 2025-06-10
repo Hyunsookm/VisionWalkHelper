@@ -28,6 +28,7 @@ import {
   updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
+import Icon from "react-native-vector-icons/Feather";
 
 export default function UserAccountScreen() {
   const router = useRouter();
@@ -212,6 +213,31 @@ export default function UserAccountScreen() {
         </View>
       </Modal>
 
+     <View style={styles.bottomNav}>
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => router.push("/user/DeviceSettingsScreen")}
+        >
+          <Icon name="shopping-cart" size={24} style={styles.navIcon} />
+          <Text style={styles.navText}>기기</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.navItem, styles.activeNavItem]}
+          onPress={() => router.push("/user/UserAccountScreen")}
+        >
+          <Icon name="user" size={24} style={styles.navIcon} />
+          <Text style={styles.navText}>계정</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => router.push("/user/UserSettingsScreen")}
+        >
+          <Icon name="settings" size={24} style={styles.navIcon} />
+          <Text style={styles.navText}>설정</Text>
+        </TouchableOpacity>
+      </View>
       {/* Auth Code Popup */}
       <Modal
         visible={showAuthPopup}
@@ -221,6 +247,14 @@ export default function UserAccountScreen() {
       >
         <View style={styles.backdrop}>
           <View style={styles.modalBox}>
+            {/* X 닫기 버튼 */}
+            <TouchableOpacity
+              onPress={() => setShowAuthPopup(false)}
+              style={styles.closeButton}
+            >
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+
             <Text style={styles.modalTitle}>연동 인증번호</Text>
             <Text style={styles.authCodeText}>{authCode}</Text>
             <Text style={styles.authTimer}>{formatTime(timeLeft)}</Text>
@@ -230,6 +264,7 @@ export default function UserAccountScreen() {
           </View>
         </View>
       </Modal>
+
     </SafeAreaView>
   );
 }
@@ -288,6 +323,30 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   logoutButtonText: { color: "#fff", fontSize: 18, fontWeight: "500" },
+  bottomNav: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
+    backgroundColor: "#fff",
+  },
+    navItem: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+  },
+  navItemActive: {
+    backgroundColor: "#f3f4f6",
+  },
+  navText: {
+    fontSize: 12,
+    color: "#6b7280",
+    marginTop: 4,
+  },
+  activeNavItem: {
+    backgroundColor: "#f3f4f6",
+    borderRadius: 8,
+  },
   backdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -295,6 +354,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 16,
   },
+  closeButton: {
+  position: 'absolute',
+  top: 10,
+  right: 10,
+  zIndex: 10,
+  padding: 5,
+},
+
+closeButtonText: {
+  fontSize: 20,
+  fontWeight: 'bold',
+  color: '#999',
+},
+
   modalBox: {
     width: "100%",
     maxWidth: 320,
