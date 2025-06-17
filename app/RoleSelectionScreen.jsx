@@ -153,9 +153,6 @@ export default function RoleSelectionScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.bottomIndicator}>
-        <View style={styles.indicator} />
-      </View>
     </SafeAreaView>
   );
 }

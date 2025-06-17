@@ -1,5 +1,3 @@
-// DeviceSettingsScreen.jsx
-
 import { useRouter } from "expo-router";
 import {
   Alert,
@@ -10,12 +8,14 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ActivityIndicator
 } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 import { checkBLEStatus } from "../../utils/ble/checkStatus";
 import { startDeviceScanAndConnect } from "../../utils/ble/startDeviceScanAndConnect";
 import bleManager from "../../utils/ble/bleManager";
-import { useEffect, useCallback } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useCallback, useState } from "react";
 
 const requestBLEPermissions = async () => {
   if (Platform.OS === "android") {
@@ -40,43 +40,73 @@ const requestBLEPermissions = async () => {
 
 export default function DeviceSettingsScreen() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [connectedDeviceId, setConnectedDeviceId] = useState(null);
+  const [initializing, setInitializing] = useState(true);
 
-  // 1) BLE 연결된 기기 조회: 권한/상태 확인 후 실행
   const checkAlreadyConnected = useCallback(async () => {
     try {
-      // 권한 요청 및 BLE 상태 확인
       await requestBLEPermissions();
       await checkBLEStatus();
 
-      // 빈 배열을 전달해서 현재 연결된 모든 기기 조회
-      const connected = await bleManager.connectedDevices([]);
-      if (connected.length > 0) {
-        const deviceId = connected[0].id;
-        // 문자열 경로로만 replace
-        router.replace(`/user/${deviceId}`);
+      const savedId = await AsyncStorage.getItem("lastConnectedDeviceId");
+      if (!savedId || savedId.length < 5) return;
+
+      try {
+        const device = await bleManager.connectToDevice(savedId);
+        await device.discoverAllServicesAndCharacteristics();
+        console.log("✅ 저장된 MAC으로 재연결 성공:", device.id);
+        setConnectedDeviceId(device.id);
+      } catch (connectErr) {
+        console.warn("❌ 저장된 MAC으로 재연결 실패, 제거 중");
+        await AsyncStorage.removeItem("lastConnectedDeviceId");
       }
     } catch (err) {
-      console.error("이미 연결된 기기 조회 실패:", err);
-      // 권한이나 BLE 상태 오류일 수 있으니, 화면 멈춤 없이 경고만 띄우기
-      Alert.alert("오류", "이미 연결된 기기 조회 중 문제가 발생했습니다.");
+      console.error("연결 확인 실패:", err.message);
     }
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     checkAlreadyConnected();
+    const timer = setTimeout(() => setInitializing(false), 1000);
+    return () => clearTimeout(timer);
   }, [checkAlreadyConnected]);
 
-  // 2) BLE 연결 버튼 눌렀을 때 스캔 & 연결
   const handleBLEConnect = async () => {
+    setLoading(true);
     try {
       await requestBLEPermissions();
       await checkBLEStatus();
 
-      startDeviceScanAndConnect((connectedDevice) => {
+      const scanTimeout = setTimeout(() => {
+        setLoading(false);
+      }, 10000);
+
+      startDeviceScanAndConnect(async (connectedDevice) => {
+        clearTimeout(scanTimeout);
+        setLoading(false);
+        await AsyncStorage.setItem("lastConnectedDeviceId", connectedDevice.id);
+        setConnectedDeviceId(connectedDevice.id);
         router.push(`/user/${connectedDevice.id}`);
       });
     } catch (err) {
+      setLoading(false);
       Alert.alert("BLE 연결 실패", err.message);
+    }
+  };
+
+  const handleBLEDisconnect = async () => {
+    try {
+      if (connectedDeviceId) {
+        const device = await bleManager.devices([connectedDeviceId]).then(arr => arr[0]);
+        if (device) await device.cancelConnection();
+      }
+    } catch (err) {
+      console.warn("BLE 연결 해제 중 오류:", err.message);
+    } finally {
+      await AsyncStorage.removeItem("lastConnectedDeviceId");
+      setConnectedDeviceId(null);
+      Alert.alert("연결 해제", "기기와의 연결이 해제되었습니다.");
     }
   };
 
@@ -92,16 +122,37 @@ export default function DeviceSettingsScreen() {
       <View style={styles.content}>
         <View style={styles.messageContainer}>
           <Text style={styles.messageText}>
-            아직 연동된 기기가{"\n"}없습니다~
+            아직 연동된 기기가{`\n`}없습니다~
           </Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.connectButton}
-          onPress={handleBLEConnect}
-        >
-          <Text style={styles.connectButtonText}>BLE 장치 연결</Text>
-        </TouchableOpacity>
+        {initializing || loading ? (
+          <ActivityIndicator size="large" color="#22c55e" />
+        ) : (
+          <>
+            <TouchableOpacity
+              style={styles.connectButton}
+              onPress={
+                connectedDeviceId
+                  ? () => router.push(`/user/${connectedDeviceId}`)
+                  : handleBLEConnect
+              }
+            >
+              <Text style={styles.connectButtonText}>
+                {connectedDeviceId ? "기기 상세 보기" : "카트 연결 버튼"}
+              </Text>
+            </TouchableOpacity>
+
+            {connectedDeviceId && (
+              <TouchableOpacity
+                style={styles.disconnectButton}
+                onPress={handleBLEDisconnect}
+              >
+                <Text style={styles.disconnectButtonText}>연결 해제</Text>
+              </TouchableOpacity>
+            )}
+          </>
+        )}
       </View>
 
       <View style={styles.bottomNav}>
@@ -134,10 +185,7 @@ export default function DeviceSettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f9fafb",
-  },
+  container: { flex: 1, backgroundColor: "#f9fafb" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -176,10 +224,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     width: "100%",
     alignItems: "center",
+    marginBottom: 12,
   },
   connectButtonText: {
     color: "#fff",
     fontSize: 18,
+    fontWeight: "500",
+  },
+  disconnectButton: {
+    backgroundColor: "#ef4444",
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    width: "100%",
+    alignItems: "center",
+  },
+  disconnectButtonText: {
+    color: "#fff",
+    fontSize: 16,
     fontWeight: "500",
   },
   bottomNav: {
