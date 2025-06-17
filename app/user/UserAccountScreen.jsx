@@ -263,30 +263,35 @@ return (
     </Modal>
 
     {/* Unlink Confirmation */}
-    <Modal
-      visible={!!unlinkTarget}
-      transparent
-      animationType="fade"
-      onRequestClose={() => setUnlinkTarget(null)}
-    >
-      <View style={styles.backdrop}>
-        <View style={[styles.modalBox, { maxHeight: '90%' }]}>
-          <ScrollView contentContainerStyle={{ alignItems: "center" }}>
-            <Text style={styles.modalTitle}>연동 해제</Text>
-            <Text style={styles.modalMessage}>
-              보호자({unlinkTarget?.userSideName || "이름 미지정"})를 연동 해제하시겠습니까?
-            </Text>
-          </ScrollView>
-
+  <Modal
+    visible={!!unlinkTarget}
+    transparent
+    animationType="fade"
+    onRequestClose={() => setUnlinkTarget(null)}
+  >
+    <View style={styles.backdrop}>
+      <View style={styles.modalBox}>
+        <Text style={styles.modalTitle}>연동 해제</Text>
+        <Text style={styles.modalMessage}>
+          보호자({unlinkTarget?.userSideName || "이름 미지정"})를 연동 해제하시겠습니까?
+        </Text>
+        <View style={styles.modalActions}>
           <TouchableOpacity
             style={[styles.confirmBtn, styles.unlinkBtn]}
             onPress={confirmUnlink}
           >
             <Text style={styles.confirmBtnText}>연동 해제</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.confirmBtn, styles.cancelBtn]}
+            onPress={() => setUnlinkTarget(null)}
+          >
+            <Text style={styles.confirmBtnText}>취소</Text>
+          </TouchableOpacity>
         </View>
       </View>
-    </Modal>
+    </View>
+  </Modal>
 
     <View style={styles.bottomNav}>
       <TouchableOpacity
@@ -461,14 +466,18 @@ modalActions: {
   marginTop: 12,
   gap: 8,                    // (선택) 버튼 사이 여백
 },
-  modalBox: {
-    width: "100%",
-    maxWidth: 320,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 24,
-    alignItems: "center",
-  },
+modalBox: {
+  width: "100%",
+  maxWidth: 320,
+  backgroundColor: "#fff",
+  borderRadius: 8,
+  padding: 24,
+  alignItems: "center",
+
+  // 🔥 추가로 아래 두 줄
+  maxHeight: "80%",
+  justifyContent: "space-between",
+},
   modalTitle: { fontSize: 18, fontWeight: "600", marginBottom: 12 },
   modalMessage: { fontSize: 16, marginBottom: 24, textAlign: "center" },
   confirmBtn: {
@@ -478,14 +487,23 @@ modalActions: {
     alignItems: "center",
     backgroundColor: "#22c55e",
   },
-  unlinkBtn: { backgroundColor: "#dc2626", width: "100%" },
-  confirmBtnText: { fontSize: 16, fontWeight: "500", color: "#fff" },
-  authCodeText: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#3b82f6",
-    marginBottom: 8,
-  },
+unlinkBtn: {
+  backgroundColor: "#dc2626",
+  paddingVertical: 12,
+  paddingHorizontal: 24,
+  borderRadius: 8,
+  alignItems: "center",
+  justifyContent: "center",
+  minWidth: 160,
+  alignSelf: "center", // ✅ 가운데 정렬
+},
+
+confirmBtnText: {
+  fontSize: 16,
+  fontWeight: "600",
+  color: "#fff",
+  textAlign: "center", // ✅ 텍스트 가운데 정렬
+},
   authTimer: {
     fontSize: 18,
     fontWeight: "600",
