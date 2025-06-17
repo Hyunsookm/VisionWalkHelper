@@ -34,6 +34,8 @@ export default function UserAccountScreen() {
   const router = useRouter();
 
   // state
+  const [editingGuardian, setEditingGuardian] = useState(null);
+  const [editedGuardianName, setEditedGuardianName] = useState("");
   const [linkedGuardians, setLinkedGuardians] = useState([]);
   const [unlinkTarget, setUnlinkTarget] = useState(null);
   const [showAuthPopup, setShowAuthPopup] = useState(false);
@@ -55,7 +57,8 @@ export default function UserAccountScreen() {
         setLinkedGuardians(
           snap.docs.map(doc => ({
             code: doc.id,
-            guardianUid: doc.data().guardianUid
+            guardianUid: doc.data().guardianUid,
+            userSideName: doc.data().userSideName || null,
           }))
         );
       } catch (e) {
@@ -139,134 +142,206 @@ export default function UserAccountScreen() {
     }
   };
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn}>
-          <Feather name="chevron-left" size={24} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>사용자 계정</Text>
-        <View style={styles.headerBtn} />
+    const handleSaveGuardianName = async () => {
+      try {
+        const peerRef = doc(db, "peers", editingGuardian.code);
+        await updateDoc(peerRef, { userSideName: editedGuardianName });
+        setLinkedGuardians(prev =>
+          prev.map(g =>
+            g.code === editingGuardian.code
+              ? { ...g, userSideName: editedGuardianName }
+              : g
+          )
+        );
+        setEditingGuardian(null);
+        setEditedGuardianName("");
+      } catch (e) {
+        console.error("이름 업데이트 실패:", e);
+        Alert.alert("오류", "보호자 이름을 저장하지 못했습니다.");
+      }
+    };
+
+
+return (
+  <SafeAreaView style={styles.safeArea}>
+    {/* Header */}
+    <View style={styles.header}>
+      <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn}>
+        <Feather name="chevron-left" size={24} />
+      </TouchableOpacity>
+      <Text style={styles.headerTitle}>사용자 계정</Text>
+      <View style={styles.headerBtn} />
+    </View>
+
+    <ScrollView contentContainerStyle={styles.content}>
+      {/* Profile */}
+      <View style={styles.profileSection}>
+        <Text style={styles.userName}>홍길동</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Profile */}
-        <View style={styles.profileSection}>
-          <Text style={styles.userName}>홍길동</Text>
-        </View>
-
-        {/* Linked Guardians */}
-        <Text style={styles.sectionTitle}>연동된 보호자</Text>
-        {linkedGuardians.length === 0 ? (
-          <Text style={styles.emptyText}>아직 연결된 보호자가 없습니다.</Text>
-        ) : (
-          linkedGuardians.map(u => (
-            <TouchableOpacity
-              key={u.code}
-              style={styles.userCard}
-              onPress={() => setUnlinkTarget(u)}
-            >
-              <View style={styles.userInfo}>
-                <View style={styles.avatar}>
-                  <Feather name="user" size={24} color="#fff" />
-                </View>
-                <Text style={styles.userName}>{u.guardianUid}</Text>
+      {/* Linked Guardians */}
+      <Text style={styles.sectionTitle}>연동된 보호자</Text>
+      {linkedGuardians.length === 0 ? (
+        <Text style={styles.emptyText}>아직 연결된 보호자가 없습니다.</Text>
+      ) : (
+        linkedGuardians.map(u => (
+          <View key={u.code} style={styles.userCard}>
+            <View style={styles.userInfo}>
+              <View style={styles.avatar}>
+                <Feather name="user" size={24} color="#fff" />
               </View>
-              <Feather name="chevron-right" size={20} color="#9ca3af" />
+              <Text style={styles.userName}>
+                {u.userSideName || "이름을 설정해주세요"}
+              </Text>
+            </View>
+
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              {/* 이름 수정 버튼 */}
+              <TouchableOpacity
+                onPress={() => {
+                  setEditingGuardian(u);
+                  setEditedGuardianName(u.userSideName || "");
+                  setUnlinkTarget(null);
+                }}
+                style={{ marginRight: 12 }}
+              >
+                <Feather name="edit-3" size={20} color="#3b82f6" />
+              </TouchableOpacity>
+
+              {/* 연동 해제 버튼 */}
+              <TouchableOpacity
+                onPress={() => {
+                  setUnlinkTarget(u);
+                  setEditingGuardian(null);
+                }}
+              >
+                <Feather name="x-circle" size={20} color="#ef4444" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))
+      )}
+
+      {/* Actions */}
+      <TouchableOpacity style={styles.linkButton} onPress={handleAuthPopup}>
+        <Text style={styles.linkButtonText}>보호자 연동</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutButtonText}>로그아웃</Text>
+      </TouchableOpacity>
+    </ScrollView>
+
+    {/* 이름 설정 Modal */}
+    <Modal
+      visible={!!editingGuardian}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setEditingGuardian(null)}
+    >
+      <View style={styles.backdrop}>
+        <View style={styles.modalBox}>
+          <Text style={styles.modalTitle}>보호자 이름 설정</Text>
+          <TextInput
+            value={editedGuardianName}
+            onChangeText={setEditedGuardianName}
+            placeholder="이름 입력"
+            style={styles.codeInput}
+          />
+          <View style={styles.modalActions}>
+            <TouchableOpacity style={styles.confirmBtn} onPress={handleSaveGuardianName}>
+              <Text style={styles.confirmBtnText}>저장</Text>
             </TouchableOpacity>
-          ))
-        )}
+            <TouchableOpacity
+              style={[styles.confirmBtn, styles.cancelBtn]}
+              onPress={() => setEditingGuardian(null)}
+            >
+              <Text style={styles.confirmBtnText}>취소</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
 
-        {/* Actions */}
-        <TouchableOpacity
-          style={styles.linkButton}
-          onPress={handleAuthPopup}
-        >
-          <Text style={styles.linkButtonText}>보호자 연동</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutButtonText}>로그아웃</Text>
-        </TouchableOpacity>
-      </ScrollView>
-
-      {/* Unlink Confirmation */}
-      <Modal
-        visible={!!unlinkTarget}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setUnlinkTarget(null)}
-      >
-        <View style={styles.backdrop}>
-          <View style={styles.modalBox}>
+    {/* Unlink Confirmation */}
+    <Modal
+      visible={!!unlinkTarget}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setUnlinkTarget(null)}
+    >
+      <View style={styles.backdrop}>
+        <View style={[styles.modalBox, { maxHeight: '90%' }]}>
+          <ScrollView contentContainerStyle={{ alignItems: "center" }}>
             <Text style={styles.modalTitle}>연동 해제</Text>
             <Text style={styles.modalMessage}>
-              보호자({unlinkTarget?.guardianUid})를 연동 해제하시겠습니까?
+              보호자({unlinkTarget?.userSideName || "이름 미지정"})를 연동 해제하시겠습니까?
             </Text>
-            <TouchableOpacity
-              style={[styles.confirmBtn, styles.unlinkBtn]}
-              onPress={confirmUnlink}
-            >
-              <Text style={styles.confirmBtnText}>연동 해제</Text>
-            </TouchableOpacity>
-          </View>
+          </ScrollView>
+
+          <TouchableOpacity
+            style={[styles.confirmBtn, styles.unlinkBtn]}
+            onPress={confirmUnlink}
+          >
+            <Text style={styles.confirmBtnText}>연동 해제</Text>
+          </TouchableOpacity>
         </View>
-      </Modal>
-
-     <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => router.push("/user/DeviceSettingsScreen")}
-        >
-          <Icon name="shopping-cart" size={24} style={styles.navIcon} />
-          <Text style={styles.navText}>기기</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.navItem, styles.activeNavItem]}
-          onPress={() => router.push("/user/UserAccountScreen")}
-        >
-          <Icon name="user" size={24} style={styles.navIcon} />
-          <Text style={styles.navText}>계정</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => router.push("/user/UserSettingsScreen")}
-        >
-          <Icon name="settings" size={24} style={styles.navIcon} />
-          <Text style={styles.navText}>설정</Text>
-        </TouchableOpacity>
       </View>
-      {/* Auth Code Popup */}
-      <Modal
-        visible={showAuthPopup}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowAuthPopup(false)}
+    </Modal>
+
+    <View style={styles.bottomNav}>
+      <TouchableOpacity
+        style={styles.navItem}
+        onPress={() => router.push("/user/DeviceSettingsScreen")}
       >
-        <View style={styles.backdrop}>
-          <View style={styles.modalBox}>
-            {/* X 닫기 버튼 */}
-            <TouchableOpacity
-              onPress={() => setShowAuthPopup(false)}
-              style={styles.closeButton}
-            >
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
+        <Icon name="shopping-cart" size={24} style={styles.navIcon} />
+        <Text style={styles.navText}>기기</Text>
+      </TouchableOpacity>
 
-            <Text style={styles.modalTitle}>연동 인증번호</Text>
-            <Text style={styles.authCodeText}>{authCode}</Text>
-            <Text style={styles.authTimer}>{formatTime(timeLeft)}</Text>
-            <Text style={styles.authText}>
-              보호자 화면에 인증번호를 입력하세요
-            </Text>
-          </View>
+      <TouchableOpacity
+        style={[styles.navItem, styles.activeNavItem]}
+        onPress={() => router.push("/user/UserAccountScreen")}
+      >
+        <Icon name="user" size={24} style={styles.navIcon} />
+        <Text style={styles.navText}>계정</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.navItem}
+        onPress={() => router.push("/user/UserSettingsScreen")}
+      >
+        <Icon name="settings" size={24} style={styles.navIcon} />
+        <Text style={styles.navText}>설정</Text>
+      </TouchableOpacity>
+    </View>
+
+    {/* Auth Code Popup */}
+    <Modal
+      visible={showAuthPopup}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowAuthPopup(false)}
+    >
+      <View style={styles.backdrop}>
+        <View style={styles.modalBox}>
+          {/* X 닫기 버튼 */}
+          <TouchableOpacity
+            onPress={() => setShowAuthPopup(false)}
+            style={styles.closeButton}
+          >
+            <Text style={styles.closeButtonText}>✕</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.modalTitle}>연동 인증번호</Text>
+          <Text style={styles.authCodeText}>{authCode}</Text>
+          <Text style={styles.authTimer}>{formatTime(timeLeft)}</Text>
+          <Text style={styles.authText}>
+            보호자 화면에 인증번호를 입력하세요
+          </Text>
         </View>
-      </Modal>
-
-    </SafeAreaView>
-  );
+      </View>
+    </Modal>
+  </SafeAreaView>
+);
 }
 
 const styles = StyleSheet.create({
@@ -362,12 +437,30 @@ const styles = StyleSheet.create({
   padding: 5,
 },
 
+modalBox: {
+  width: "100%",
+  maxWidth: 320,
+  backgroundColor: "#fff",
+  borderRadius: 8,
+  padding: 24,
+  alignItems: "center",
+  justifyContent: "space-between", // 🔥 추가하면 내용과 버튼 간 여백 확보
+  maxHeight: "90%",                // 🔥 화면 넘치지 않도록 제한
+},
+
+
 closeButtonText: {
   fontSize: 20,
   fontWeight: 'bold',
   color: '#999',
 },
-
+modalActions: {
+  flexDirection: "row",      // ✅ 버튼을 가로로 배치
+  justifyContent: "space-between",
+  width: "100%",
+  marginTop: 12,
+  gap: 8,                    // (선택) 버튼 사이 여백
+},
   modalBox: {
     width: "100%",
     maxWidth: 320,
