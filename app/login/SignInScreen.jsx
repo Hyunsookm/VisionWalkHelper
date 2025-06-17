@@ -30,6 +30,28 @@ export default function SignupPage() {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // 전화번호 자동 포맷 함수 (000-0000-0000)
+  const formatPhoneNumber = (value) => {
+    const cleaned = value.replace(/\D/g, "");
+    const match = cleaned.match(/^(\d{0,3})(\d{0,4})(\d{0,4})$/);
+    if (!match) return value;
+    const [, part1, part2, part3] = match;
+    if (part2) {
+      if (part3) return `${part1}-${part2}-${part3}`;
+      return `${part1}-${part2}`;
+    }
+    return part1;
+  };
+    // 전화번호 변경 및 자동 포커스 이동
+  const handlePhoneChange = (text) => {
+    const formatted = formatPhoneNumber(text);
+    setPhoneNumber(formatted);
+
+    // 순수 숫자만 남겨서 길이 체크 (010-1234-5678 -> "01012345678" 길이 11)
+    const digitCount = formatted.replace(/\D/g, "").length;
+
+  };
+
   const handleSignup = async () => {
     if (!phoneNumber.trim() || !password) {
       return Alert.alert("입력 오류", "전화번호와 비밀번호를 모두 입력해주세요.");
@@ -91,7 +113,7 @@ export default function SignupPage() {
                 placeholder="전화번호 (숫자만)"
                 keyboardType="phone-pad"
                 value={phoneNumber}
-                onChangeText={setPhoneNumber}
+                onChangeText={handlePhoneChange}
               />
             </View>
 

@@ -9,6 +9,7 @@ import {
   readLightByte,
   readAlarmByte,
   readVolumeByte,
+  readBatteryByte,      // ← 추가
   writeLightByte,
   writeAlarmByte,
   writeVolumeByte,
@@ -23,7 +24,7 @@ export default function DeviceDetailScreen() {
   const [isLightOn, setIsLightOn] = useState(false);
   const [alarmByte, setAlarmByte] = useState(0);
   const [volumeLevel, setVolumeLevel] = useState(0);
-
+  const [batteryLevel, setBatteryLevel] = useState(null);
   useEffect(() => {
     if (!deviceId) {
       Alert.alert("오류", "deviceId가 없습니다.");
@@ -43,31 +44,24 @@ export default function DeviceDetailScreen() {
 
   useEffect(() => {
     if (!device) return;
-    (async () => {
-      try {
-        const lightVal = await readLightByte(device);
-        setIsLightOn(lightVal === 1);
 
-        const alarmVal = await readAlarmByte(device);
-        setAlarmByte(alarmVal);
+    // ⚠️ 구독 함수는 바로 실행되는 게 아니라 callback 등록이라 async 필요 없음
+    const subscription = readBatteryByte(device, setBatteryLevel);
 
-        const volVal = await readVolumeByte(device);
-        setVolumeLevel(volVal);
-      } catch (e) {
-        Alert.alert("읽기 오류", e.message);
-      }
-    })();
+    return () => {
+      subscription?.remove?.(); // 컴포넌트 언마운트 시 구독 해제
+    };
   }, [device]);
 
-  const toggleLight = async (newVal) => {
-    setIsLightOn(newVal);
-    if (!device) return;
-    try {
-      await writeLightByte(device, newVal ? 1 : 0);
-    } catch (e) {
-      Alert.alert("쓰기 실패", e.message);
-    }
-  };
+    const toggleLight = async (newVal) => {
+      setIsLightOn(newVal);
+      if (!device) return;
+      try {
+        await writeLightByte(device, newVal ? 1 : 0);
+      } catch (e) {
+        Alert.alert("쓰기 실패", e.message);
+      }
+    };
 
   const onChangeAlarm = async () => {
     if (!device) return;
@@ -109,6 +103,15 @@ export default function DeviceDetailScreen() {
             <Icon name="bluetooth" size={20} color={device ? "#3b82f6" : "#ccc"} />
           </View>
         </View>
+
+        {/* 배터리 레벨 표시 */}
+        <View style={styles.settingItem}>
+          <Text style={styles.settingTitle}>배터리 레벨</Text>
+          <Text style={styles.settingSubtitle}>
+            {batteryLevel !== null ? `${batteryLevel}%` : "읽는 중..."}
+          </Text>
+        </View>
+
         <View style={styles.settingItem}>
           <Text style={styles.settingTitle}>전조등</Text>
           <Switch
@@ -144,29 +147,31 @@ export default function DeviceDetailScreen() {
           </View>
         </View>
       </View>
-      <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={[styles.navItem, styles.activeNavItem]}
-          onPress={() => router.push("/user/DeviceSettingsScreen")}
-        >
-          <Icon name="shopping-cart" size={24} style={styles.navIcon} />
-          <Text style={styles.navText}>기기</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => router.push("/user/UserAccountScreen")}
-        >
-          <Icon name="user" size={24} style={styles.navIcon} />
-          <Text style={styles.navText}>계정</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => router.push("/user/UserSettingsScreen")}
-        >
-          <Icon name="settings" size={24} style={styles.navIcon} />
-          <Text style={styles.navText}>설정</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.bottomNav}>
+          <TouchableOpacity
+            style={[styles.navItem, styles.activeNavItem]}
+            onPress={() => router.push("/user/DeviceSettingsScreen")}
+          >
+            <Icon name="shopping-cart" size={24} style={styles.navIcon} />
+            <Text style={styles.navText}>기기</Text>
+          </TouchableOpacity>
+  
+          <TouchableOpacity
+            style={styles.navItem}
+            onPress={() => router.push("/user/UserAccountScreen")}
+          >
+            <Icon name="user" size={24} style={styles.navIcon} />
+            <Text style={styles.navText}>계정</Text>
+          </TouchableOpacity>
+  
+          <TouchableOpacity
+            style={styles.navItem}
+            onPress={() => router.push("/user/UserSettingsScreen")}
+          >
+            <Icon name="settings" size={24} style={styles.navIcon} />
+            <Text style={styles.navText}>설정</Text>
+          </TouchableOpacity>
+        </View>
     </SafeAreaView>
   );
 }

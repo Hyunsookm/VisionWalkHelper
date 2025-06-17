@@ -11,7 +11,11 @@ buildscript {
     classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
   }
 }
-
+ext {
+  compileSdkVersion = 35    // Android 15(API 35) 이상으로 설정
+  targetSdkVersion  = 35
+  minSdkVersion     = 24    // 최소 지원 API 레벨
+}
 def reactNativeAndroidDir = new File(
         providers.exec {
           workingDir(rootDir)

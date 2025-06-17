@@ -25,13 +25,30 @@ import {
   collection,
   serverTimestamp
 } from "firebase/firestore";
+import { useRef } from "react";
+
 import styles from "../styles/styles";
 
 const SERVER_URL = "http://3.39.142.7:3000/kakao-login";
 
+// 전화번호 자동 포맷 함수 (000-0000-0000)
+const formatPhoneNumber = (value) => {
+  const cleaned = value.replace(/\D/g, "");
+  const match = cleaned.match(/^(\d{0,3})(\d{0,4})(\d{0,4})$/);
+  if (!match) return value;
+  const [, part1, part2, part3] = match;
+  if (part2) {
+    if (part3) return `${part1}-${part2}-${part3}`;
+    return `${part1}-${part2}`;
+  }
+  return part1;
+};
+
 export default function LoginScreen() {
   const router = useRouter();
 
+  const phoneInputRef = useRef<TextInput>(null);
+  const passwordInputRef = useRef<TextInput>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
@@ -49,17 +66,13 @@ export default function LoginScreen() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const uid = userCredential.user.uid;
 
-      // Firestore 프로필이 없으면 생성
+      // -- Firestore에 프로필이 없으면 로그인 실패 처리 --
       const userRef = doc(db, "users", uid);
       const userSnap = await getDoc(userRef);
       if (!userSnap.exists()) {
-        await setDoc(userRef, {
-          phoneNumber,
-          createdAt: serverTimestamp(),
-          isAdmin: false,
-          role: "",
-          name: ""
-        });
+        Alert.alert("로그인 실패", "존재하지 않는 계정입니다.");
+        setLoading(false);
+        return;
       }
 
       Alert.alert("로그인 성공");
@@ -131,12 +144,20 @@ export default function LoginScreen() {
     }
   };
 
-  // 🔥 여기를 원하는 경로로 바꿔주세요
+  // 전화번호 변경 및 자동 포커스 이동
+  const handlePhoneChange = (text) => {
+    const formatted = formatPhoneNumber(text);
+    setPhoneNumber(formatted);
+
+    // 순수 숫자만 남겨서 길이 체크 (010-1234-5678 -> "01012345678" 길이 11)
+    const digitCount = formatted.replace(/\D/g, "").length;
+    if (digitCount === 11) {
+      passwordInputRef.current?.focus();
+    }
+  };
+
   const handleSignup = () => {
-    // 예: SignInScreen.jsx가 app/SignInScreen.jsx에 있을 때
     router.push("/login/SignInScreen");
-    // 만약 app/login/SignInScreen.jsx라면 →
-    // router.push("/login/SignInScreen");
   };
 
   const handlePasswordReset = () => {
@@ -155,7 +176,7 @@ export default function LoginScreen() {
           </Text>
         </View>
 
-        {/* 로그인 폼 */}
+         {/* 로그인 폼 */}
         <View style={styles.formContainer}>
           <Text style={styles.title}>로그인</Text>
           <Text style={styles.subtitle}>전화번호와 비밀번호를 입력하세요</Text>
@@ -163,13 +184,16 @@ export default function LoginScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>전화번호</Text>
             <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                value={phoneNumber}
-                onChangeText={setPhoneNumber}
-                keyboardType="phone-pad"
-                placeholder="01012345678"
-              />
+            <TextInput
+              ref={phoneInputRef}
+              style={styles.input}
+              value={phoneNumber}
+              onChangeText={handlePhoneChange}    // ← 여기 변경
+              keyboardType="phone-pad"
+              placeholder="전화번호 입력"
+              maxLength={13}
+              returnKeyType="next"
+            />
             </View>
           </View>
 
@@ -177,11 +201,14 @@ export default function LoginScreen() {
             <Text style={styles.label}>비밀번호</Text>
             <View style={styles.inputContainer}>
               <TextInput
+                ref={passwordInputRef}                           // ← ref 할당
+                returnKeyType="done"                          // ← “다음” 버튼
+                onSubmitEditing={handleLogin}
                 style={styles.input}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
-                placeholder="••••••"
+                placeholder="비밀번호 입력"
               />
               <TouchableOpacity
                 style={styles.eyeIcon}
@@ -191,6 +218,7 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
           </View>
+
 
           <View style={styles.buttonGroup}>
             <TouchableOpacity
@@ -229,9 +257,6 @@ export default function LoginScreen() {
         </View>
       </View>
 
-      <View style={styles.bottomIndicator}>
-        <View style={styles.indicator} />
-      </View>
     </SafeAreaView>
   );
 }

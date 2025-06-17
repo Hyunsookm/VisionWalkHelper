@@ -103,3 +103,6 @@ expo-env.d.ts
 # kakaoLogin
 android/app/src/main/AndroidManifest.xml
 android/app/src/main/res/values/strings.xml
+
+# apk 파일
+android/app/debug/*

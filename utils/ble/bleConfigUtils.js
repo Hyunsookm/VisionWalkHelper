@@ -159,3 +159,38 @@ export async function readVolumeByte(device) {
   const binary = atob(char.value);
   return binary.charCodeAt(0);
 }
+
+/**
+ * 배터리 레벨을 실시간으로 구독 (notify 방식)
+ * @param {Device} device
+ * @param {(level: number) => void} setBatteryLevel - 배터리 레벨 수신 콜백
+ * @returns {Subscription} 구독 객체 (subscription.remove()로 해제)
+ */
+export function readBatteryByte(device, setBatteryLevel) {
+  const BATTERY_SERVICE_UUID = "87654321-1234-5678-1234-56789abcdef0";  // 표준 Battery Service UUID
+  const BATTERY_CHAR_UUID = "2A19";     // 표준 Battery Level Characteristic UUID
+
+  return device.monitorCharacteristicForService(
+    BATTERY_SERVICE_UUID,
+    BATTERY_CHAR_UUID,
+    (error, characteristic) => {
+      if (error) {
+        console.error("❌ 배터리 구독 오류:", error.message);
+        return;
+      }
+
+      if (!characteristic?.value) {
+        console.warn("⚠️ characteristic 값 없음");
+        return;
+      }
+
+      try {
+        const binary = atob(characteristic.value);
+        const level = binary.charCodeAt(0);
+        setBatteryLevel(level);
+      } catch (decodeErr) {
+        console.error("❌ 배터리 값 디코딩 실패:", decodeErr);
+      }
+    }
+  );
+}
