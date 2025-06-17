@@ -34,9 +34,10 @@ export default function AccountLinkScreen() {
   const [unlinkTarget, setUnlinkTarget] = useState(null);
   const [showCodeModal, setShowCodeModal] = useState(false);
   const [code, setCode] = useState("");
+  const [userName, setUserName] = useState("");
   const [linkedUsers, setLinkedUsers] = useState([]);
 
-  // Firestore에서 연동된 사용자들 불러오기
+  // 연동된 사용자 가져오기
   useEffect(() => {
     const fetchLinked = async () => {
       try {
@@ -51,7 +52,8 @@ export default function AccountLinkScreen() {
         const snap = await getDocs(q);
         const users = snap.docs.map(doc => ({
           code: doc.id,
-          userUid: doc.data().userUid
+          userUid: doc.data().userUid,
+          guardianDisplayName: doc.data().guardianDisplayName || null,
         }));
         setLinkedUsers(users);
       } catch (e) {
@@ -61,18 +63,16 @@ export default function AccountLinkScreen() {
     fetchLinked();
   }, []);
 
-  // 연동 해제
   const confirmUnlink = async () => {
     try {
       const peerRef = doc(db, "peers", unlinkTarget.code);
       await updateDoc(peerRef, {
-        status: "pending",    // 또는 삭제: deleteDoc
+        status: "pending",
         guardianUid: "",
         linkedAt: null,
       });
       Alert.alert("알림", `${unlinkTarget.userUid}의 연동이 해제되었습니다.`);
       setUnlinkTarget(null);
-      // 목록 갱신
       setLinkedUsers(prev => prev.filter(u => u.code !== unlinkTarget.code));
     } catch (e) {
       console.error("연동 해제 실패:", e);
@@ -80,10 +80,9 @@ export default function AccountLinkScreen() {
     }
   };
 
-  // 연동 코드 입력 & Firestore 업데이트
   const confirmLink = async () => {
-    if (!code.trim()) {
-      return Alert.alert("알림", "코드를 입력해주세요.");
+    if (!code.trim() || !userName.trim()) {
+      return Alert.alert("알림", "코드와 이름을 모두 입력해주세요.");
     }
     try {
       const peerRef = doc(db, "peers", code.trim());
@@ -97,18 +96,23 @@ export default function AccountLinkScreen() {
 
       await updateDoc(peerRef, {
         guardianUid,
+        guardianDisplayName: userName.trim(),
         status: "linked",
         linkedAt: serverTimestamp(),
       });
 
-      // 연동된 사용자 목록에 추가
       setLinkedUsers(prev => [
         ...prev,
-        { code: code.trim(), userUid: snap.data().userUid }
+        {
+          code: code.trim(),
+          userUid: snap.data().userUid,
+          guardianDisplayName: userName.trim(),
+        },
       ]);
 
-      Alert.alert("연동 성공", `사용자(${snap.data().userUid})와 연결되었습니다.`);
+      Alert.alert("연동 성공", `사용자(${userName})와 연결되었습니다.`);
       setCode("");
+      setUserName("");
       setShowCodeModal(false);
     } catch (err) {
       console.error("연동 실패:", err);
@@ -130,7 +134,6 @@ export default function AccountLinkScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* 기존 ‘연동된 사용자’ */}
         <Text style={styles.sectionTitle}>연동된 사용자</Text>
         {linkedUsers.length === 0 && (
           <Text style={styles.emptyText}>아직 연결된 사용자가 없습니다.</Text>
@@ -145,13 +148,14 @@ export default function AccountLinkScreen() {
               <View style={styles.avatar}>
                 <Feather name="user" size={24} color="#fff" />
               </View>
-              <Text style={styles.userName}>{u.userUid}</Text>
+              <Text style={styles.userName}>
+                {u.guardianDisplayName || u.userUid}
+              </Text>
             </View>
             <Feather name="chevron-right" size={20} color="#9ca3af" />
           </TouchableOpacity>
         ))}
 
-        {/* 계정 연동 버튼 */}
         <TouchableOpacity
           style={styles.linkButton}
           onPress={() => setShowCodeModal(true)}
@@ -171,7 +175,7 @@ export default function AccountLinkScreen() {
           <View style={styles.modalBox}>
             <Text style={styles.modalTitle}>연동 해제</Text>
             <Text style={styles.modalMessage}>
-              {unlinkTarget?.userUid}님의 연동을 해제하시겠습니까?
+              {unlinkTarget?.guardianDisplayName || unlinkTarget?.userUid}님의 연동을 해제하시겠습니까?
             </Text>
             <TouchableOpacity
               style={[styles.confirmBtn, styles.unlinkBtn]}
@@ -201,6 +205,12 @@ export default function AccountLinkScreen() {
               value={code}
               onChangeText={setCode}
             />
+            <TextInput
+              style={styles.codeInput}
+              placeholder="사용자 이름을 입력하세요"
+              value={userName}
+              onChangeText={setUserName}
+            />
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={[styles.confirmBtn, styles.actionBtn]}
@@ -210,7 +220,11 @@ export default function AccountLinkScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.confirmBtn, styles.cancelBtn]}
-                onPress={() => setShowCodeModal(false)}
+                onPress={() => {
+                  setShowCodeModal(false);
+                  setCode("");
+                  setUserName("");
+                }}
               >
                 <Text style={[styles.confirmBtnText, styles.cancelText]}>
                   취소
@@ -249,7 +263,6 @@ export default function AccountLinkScreen() {
     </SafeAreaView>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f9fafb" },
@@ -327,8 +340,8 @@ const styles = StyleSheet.create({
   unlinkBtn: { backgroundColor: "#dc2626", marginTop: 12 },
   confirmBtnText: { fontSize: 16, fontWeight: "500", color: "#fff" },
   cancelText: { color: "#fff" },
-  cancelBtn:{
-          flex: 1,
+  cancelBtn: {
+    flex: 1,
     paddingVertical: 12,
     borderRadius: 6,
     alignItems: "center",
@@ -341,7 +354,7 @@ const styles = StyleSheet.create({
     borderColor: "#e5e7eb",
     borderRadius: 6,
     padding: 8,
-    marginBottom: 24,
+    marginBottom: 16,
   },
   modalActions: {
     flexDirection: "row",
@@ -357,7 +370,7 @@ const styles = StyleSheet.create({
   navItem: { flex: 1, alignItems: "center", padding: 8 },
   navText: { fontSize: 12, color: "#6b7280", marginTop: 4 },
   navTextActive: { color: "#000000" },
-    activeNavItem: {
+  activeNavItem: {
     backgroundColor: "#f3f4f6",
     borderRadius: 8,
   },
