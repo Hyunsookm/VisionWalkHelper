@@ -9,7 +9,7 @@ import {
   readLightByte,
   readAlarmByte,
   readVolumeByte,
-  readBatteryByte,      // ← 추가
+  readBatteryByte,
   writeLightByte,
   writeAlarmByte,
   writeVolumeByte,
@@ -23,8 +23,10 @@ export default function DeviceDetailScreen() {
   const [device, setDevice] = useState(null);
   const [isLightOn, setIsLightOn] = useState(false);
   const [alarmByte, setAlarmByte] = useState(0);
+  const [isAlarmOn, setIsAlarmOn] = useState(false);           // ← 추가
   const [volumeLevel, setVolumeLevel] = useState(0);
   const [batteryLevel, setBatteryLevel] = useState(null);
+
   useEffect(() => {
     if (!deviceId) {
       Alert.alert("오류", "deviceId가 없습니다.");
@@ -44,36 +46,37 @@ export default function DeviceDetailScreen() {
 
   useEffect(() => {
     if (!device) return;
-
-    // ⚠️ 구독 함수는 바로 실행되는 게 아니라 callback 등록이라 async 필요 없음
     const subscription = readBatteryByte(device, setBatteryLevel);
-
     return () => {
-      subscription?.remove?.(); // 컴포넌트 언마운트 시 구독 해제
+      subscription?.remove?.();
     };
   }, [device]);
 
-    const toggleLight = async (newVal) => {
-      setIsLightOn(newVal);
-      if (!device) return;
-      try {
-        await writeLightByte(device, newVal ? 1 : 0);
-      } catch (e) {
-        Alert.alert("쓰기 실패", e.message);
-      }
-    };
-
-  const onChangeAlarm = async () => {
+  // 라이트 토글
+  const toggleLight = async (newVal) => {
+    setIsLightOn(newVal);
     if (!device) return;
     try {
-      const nextAlarm = (alarmByte + 1) & 0xff;
-      await writeAlarmByte(device, nextAlarm);
-      setAlarmByte(nextAlarm);
+      await writeLightByte(device, newVal ? 1 : 0);
     } catch (e) {
       Alert.alert("쓰기 실패", e.message);
     }
   };
 
+  // 알람 ON/OFF 토글
+  const toggleAlarm = async (newVal) => {
+    setIsAlarmOn(newVal);
+    if (!device) return;
+    try {
+      const byteVal = newVal ? 1 : 0;
+      await writeAlarmByte(device, byteVal);
+      setAlarmByte(byteVal);
+    } catch (e) {
+      Alert.alert("쓰기 실패", e.message);
+    }
+  };
+
+  // 볼륨 조절
   const onChangeVolume = async (delta) => {
     if (!device) return;
     try {
@@ -112,6 +115,7 @@ export default function DeviceDetailScreen() {
           </Text>
         </View>
 
+        {/* 전조등 토글 */}
         <View style={styles.settingItem}>
           <Text style={styles.settingTitle}>전조등</Text>
           <Switch
@@ -121,12 +125,19 @@ export default function DeviceDetailScreen() {
             thumbColor="#fff"
           />
         </View>
+
+        {/* 알람 ON/OFF 토글 */}
         <View style={styles.settingItem}>
           <Text style={styles.settingTitle}>알람(Byte: {alarmByte})</Text>
-          <TouchableOpacity style={styles.smallButton} onPress={onChangeAlarm}>
-            <Text style={styles.smallButtonText}>+1 전송</Text>
-          </TouchableOpacity>
+          <Switch
+            value={isAlarmOn}
+            onValueChange={toggleAlarm}
+            trackColor={{ false: "#e5e7eb", true: "#3b82f6" }}
+            thumbColor="#fff"
+          />
         </View>
+
+        {/* 볼륨 조절 버튼 */}
         <View style={styles.settingItem}>
           <View style={styles.settingLeft}>
             <Text style={styles.settingTitle}>볼륨(Byte: {volumeLevel})</Text>
@@ -147,31 +158,32 @@ export default function DeviceDetailScreen() {
           </View>
         </View>
       </View>
-        <View style={styles.bottomNav}>
-          <TouchableOpacity
-            style={[styles.navItem, styles.activeNavItem]}
-            onPress={() => router.push("/user/DeviceSettingsScreen")}
-          >
-            <Icon name="shopping-cart" size={24} style={styles.navIcon} />
-            <Text style={styles.navText}>기기</Text>
-          </TouchableOpacity>
-  
-          <TouchableOpacity
-            style={styles.navItem}
-            onPress={() => router.push("/user/UserAccountScreen")}
-          >
-            <Icon name="user" size={24} style={styles.navIcon} />
-            <Text style={styles.navText}>계정</Text>
-          </TouchableOpacity>
-  
-          <TouchableOpacity
-            style={styles.navItem}
-            onPress={() => router.push("/user/UserSettingsScreen")}
-          >
-            <Icon name="settings" size={24} style={styles.navIcon} />
-            <Text style={styles.navText}>설정</Text>
-          </TouchableOpacity>
-        </View>
+
+      <View style={styles.bottomNav}>
+        <TouchableOpacity
+          style={[styles.navItem, styles.activeNavItem]}
+          onPress={() => router.push("/user/DeviceSettingsScreen")}
+        >
+          <Icon name="shopping-cart" size={24} style={styles.navIcon} />
+          <Text style={styles.navText}>기기</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => router.push("/user/UserAccountScreen")}
+        >
+          <Icon name="user" size={24} style={styles.navIcon} />
+          <Text style={styles.navText}>계정</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => router.push("/user/UserSettingsScreen")}
+        >
+          <Icon name="settings" size={24} style={styles.navIcon} />
+          <Text style={styles.navText}>설정</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }

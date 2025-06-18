@@ -178,11 +178,11 @@ export default function AccountLinkScreen() {
               {unlinkTarget?.guardianDisplayName || unlinkTarget?.userUid}님의 연동을 해제하시겠습니까?
             </Text>
             <TouchableOpacity
-              style={[styles.confirmBtn, styles.unlinkBtn]}
+              style={[styles.unlinkBtn]}
               onPress={confirmUnlink}
             >
-              <Text style={[styles.confirmBtnText, styles.unlinkBtnText]}>
-                연동 해제
+              <Text style={styles.unlinkBtnText}>
+                확인
               </Text>
             </TouchableOpacity>
           </View>
@@ -337,7 +337,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#22c55e",
   },
-  unlinkBtn: { backgroundColor: "#dc2626", marginTop: 12 },
+  unlinkBtn: {     
+    flex: 1,
+    minHeight: 40,
+    paddingVertical: 10,
+    borderRadius: 6,
+    alignItems: "center",
+    backgroundColor: "#dc2626",
+    marginTop: 12},
   confirmBtnText: { fontSize: 16, fontWeight: "500", color: "#fff" },
   cancelText: { color: "#fff" },
   cancelBtn: {
@@ -367,6 +374,11 @@ const styles = StyleSheet.create({
     borderTopColor: "#e5e7eb",
     backgroundColor: "#fff",
   },
+  confirmBtnText: { fontSize: 16, fontWeight: "500", color: "#fff" },
+  unlinkBtnText: {   
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#fff", }, // 여기에 추가됨
   navItem: { flex: 1, alignItems: "center", padding: 8 },
   navText: { fontSize: 12, color: "#6b7280", marginTop: 4 },
   navTextActive: { color: "#000000" },
