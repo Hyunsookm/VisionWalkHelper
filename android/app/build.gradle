@@ -94,6 +94,10 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0.0"
+
+        manifestPlaceholders = [
+                kakaoKey: project.hasProperty("KAKAO_NATIVE_APP_KEY") ? project.KAKAO_NATIVE_APP_KEY : ""
+        ]
     }
     signingConfigs {
         debug {

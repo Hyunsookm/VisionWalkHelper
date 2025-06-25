@@ -78,5 +78,5 @@ playground.xcworkspace
 GoogleService-Info.plist
 
 # 기타
-ios/**/Info.plist
+visionwalkhelper/Info.plist
 *.log
