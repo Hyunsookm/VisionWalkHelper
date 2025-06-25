@@ -1,10 +1,7 @@
-# OSX
-#
-.DS_Store
-
 # Xcode
 #
 build/
+DerivedData/
 *.pbxuser
 !default.pbxuser
 *.mode1v3
@@ -13,20 +10,77 @@ build/
 !default.mode2v3
 *.perspectivev3
 !default.perspectivev3
-xcuserdata
-*.xccheckout
-*.moved-aside
-DerivedData
-*.hmap
-*.ipa
 *.xcuserstate
-project.xcworkspace
-.xcode.env.local
+*.xccheckout
+*.xcscmblueprint
+xcuserdata/
 
-# Bundle artifacts
-*.jsbundle
+# macOS 시스템 파일
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+.com.apple.timemachine.donotpresent
+.DocumentRevisions-V100
+.TemporaryItems
+.VolumeIcon.icns
+.apdisk
+
+# Swift Package Manager
+.swiftpm
+.build/
 
 # CocoaPods
-/Pods/
+Pods/
+Podfile.lock
+xcworkspace
+*.xcworkspace
 
-**/Info.plist
+# Carthage
+Carthage/
+Cartfile.resolved
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+
+# Archives
+*.xcarchive
+
+# App artifacts
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Code signing
+*.cer
+*.mobileprovision
+*.p12
+
+# Xcode automatically generated files
+*.hmap
+*.ipa
+
+# Swift Playground
+timeline.xctimeline
+playground.xcworkspace
+
+# User-specific Xcode settings
+*.xcuserdatad
+
+# Simulator
+*.simruntime
+*.simdevice
+*.simdata
+
+# Firebase
+GoogleService-Info.plist
+
+# 기타
+*.plist
+*.log

@@ -1,16 +1,57 @@
-# OSX
-#
+# macOS 시스템 파일
 .DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+.com.apple.timemachine.donotpresent
+.DocumentRevisions-V100
+.TemporaryItems
+.VolumeIcon.icns
+.apdisk
 
 # Android/IntelliJ
-#
-build/
-.idea
-.gradle
-local.properties
+.gradle/
+.gradle-cache/
+.idea/
 *.iml
-*.hprof
+*.ipr
+*.iws
+build/
+**/build/
+local.properties
+captures/
+.externalNativeBuild/
 .cxx/
+*.hprof
+*.log
 
-# Bundle artifacts
+# Android artifacts
+*.apk
+*.aar
+*.dex
+
+# Proguard
+proguard/
+
+# Keystore (보안)
+*.jks
+*.keystore
+!debug.keystore
+
+# Google Services (e.g., Firebase)
+google-services.json
+fabric.properties
+
+# Jetpack Compose
+.compose-cache/
+
+# 기타
+*.orig
+Thumbs.db
+
+# Bundle artifacts (React Native 등)
 *.jsbundle
