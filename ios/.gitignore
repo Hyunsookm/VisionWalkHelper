@@ -1,20 +1,3 @@
-# Xcode
-#
-build/
-DerivedData/
-*.pbxuser
-!default.pbxuser
-*.mode1v3
-!default.mode1v3
-*.mode2v3
-!default.mode2v3
-*.perspectivev3
-!default.perspectivev3
-*.xcuserstate
-*.xccheckout
-*.xcscmblueprint
-xcuserdata/
-
 # macOS 시스템 파일
 .DS_Store
 .AppleDouble
@@ -30,6 +13,26 @@ Icon
 .VolumeIcon.icns
 .apdisk
 
+# Xcode
+build/
+DerivedData/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+xcuserdata/
+*.xcuserdatad
+project.xcworkspace
+*.xcworkspace
+.xcode.env.local
+
 # Swift Package Manager
 .swiftpm
 .build/
@@ -37,8 +40,8 @@ Icon
 # CocoaPods
 Pods/
 Podfile.lock
-xcworkspace
-*.xcworkspace
+/Pods/
+**/Info.plist
 
 # Carthage
 Carthage/
@@ -49,36 +52,29 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/
 
-# Archives
+# Archives & Artifacts
 *.xcarchive
-
-# App artifacts
 *.ipa
+*.jsbundle
 *.dSYM.zip
 *.dSYM
+*.hmap
 
 # Code signing
 *.cer
 *.mobileprovision
 *.p12
 
-# Xcode automatically generated files
-*.hmap
-*.ipa
-
-# Swift Playground
+# Swift Playgrounds
 timeline.xctimeline
 playground.xcworkspace
-
-# User-specific Xcode settings
-*.xcuserdatad
 
 # Simulator
 *.simruntime
 *.simdevice
 *.simdata
 
-# Firebase
+# Firebase (보안주의)
 GoogleService-Info.plist
 
 # 기타
