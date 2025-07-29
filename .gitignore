@@ -242,4 +242,6 @@ backend/firebase/serviceAccountKey.json
 # 개인용 Xcode 환경 설정
 ios/.xcode.env.local
 
+# apk 추출용 파일
 expo-env.d.ts
+cridentials.json
