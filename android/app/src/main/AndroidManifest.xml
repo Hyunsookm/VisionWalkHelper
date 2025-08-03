@@ -3,6 +3,7 @@
   <!-- 권한 선언 -->
   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+  <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
   <uses-permission android:name="android.permission.BLUETOOTH" />
   <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
   <uses-permission android:name="android.permission.INTERNET" />
@@ -10,6 +11,7 @@
   <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
   <uses-permission android:name="android.permission.VIBRATE" />
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+  <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
   <!-- 쿼리 (외부 앱 실행) -->
   <queries>
@@ -35,6 +37,10 @@
     <meta-data
         android:name="com.kakao.sdk.AppKey"
         android:value="${kakaoKey}" />
+
+    <meta-data
+        android:name="com.naver.maps.map.NCP_KEY_ID"
+        android:value="xbc3hmxcbv" />
 
     <!-- Expo 관련 설정 -->
     <meta-data android:name="expo.modules.updates.ENABLED" android:value="false" />
