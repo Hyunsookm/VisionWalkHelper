@@ -10,11 +10,13 @@ export default function GuardianScreen() {
   const router = useRouter();
 
   const handleUser1 = () => {
-    router.push("/map/map");
+      Alert.alert("알림", "사용자 1의 상세 정보를 확인합니다.");
+      router.push("/map/MapGuardian");
   };
 
   const handleUser2 = () => {
     Alert.alert("알림", "사용자 2의 상세 정보를 확인합니다.");
+    router.push("/map/MapGuardian")
   };
 
   // ✨ 새 사용자 연결 버튼 → AccountLinkScreen으로 이동

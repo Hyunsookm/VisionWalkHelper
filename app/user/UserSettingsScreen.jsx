@@ -47,6 +47,15 @@ export default function UserSettingScreen() {
     }
   };
 
+  const handleGoMap = async () => {
+    try {
+      router.push("../map/MapUser");
+    } catch (e) {
+      Alert.alert("업데이트 실패", e.message);
+    }
+  };
+
+
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* ───────── Header ───────── */}
@@ -71,6 +80,12 @@ export default function UserSettingScreen() {
           <Text style={styles.rowText}>메인화면으로 가기</Text>
           <Feather name="chevron-right" size={20} />
         </TouchableOpacity>
+
+        <TouchableOpacity style={styles.row} onPress={handleGoMap}>
+          <Text style={styles.rowText}>지도로 가기</Text>
+          <Feather name="chevron-right" size={20} />
+        </TouchableOpacity>
+
 
         {/* 푸시 알림 토글 */}
         <View style={styles.row}>

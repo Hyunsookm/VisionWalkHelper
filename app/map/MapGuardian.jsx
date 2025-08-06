@@ -65,7 +65,6 @@ export default function MapScreen() {
             });
           }
 
-
           watchIdRef.current = Geolocation.watchPosition(
             (pos) => {
               const newLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
