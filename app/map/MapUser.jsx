@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { View, Text, Alert } from 'react-native';
 import { NaverMapView } from '@mj-studio/react-native-naver-map';
 import * as Location from 'expo-location';
+import { locationUpdater } from "../services/locationupdater";
 
 // 내보내신 config에서 가져오기
 import {
@@ -17,121 +18,29 @@ import {
   collection,
   addDoc,
   serverTimestamp,
-  GeoPoint
+  GeoPoint,
+  doc,
+  setDoc,
 } from 'firebase/firestore';
 
 const FIREBASE_UPDATE_INTERVAL = 1 * 10 * 1000; // 1분 10초
 
 export default function MapScreen() {
-  const [location, setLocation] = useState(null);
   const mapRef = useRef(null);
-  const locationSubscription = useRef(null);
-  const firebaseInterval = useRef(null);
-
-  // firebaseConfig.js에서 만든 Auth 인스턴스
-  const auth = getAuthInstance();
+  const [location, setLocation] = useState(locationUpdater.getLastLocation());
 
   useEffect(() => {
-    // (선택) 로그인 상태 변화 감지
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      console.log('[DEBUG] auth state changed →', user);
-    });
-
-    // 1) 위치 트래킹 초기화
-    initLocationTracking();
-
-    return () => {
-      unsubscribe();
-      locationSubscription.current?.remove();
-      clearInterval(firebaseInterval.current);
-    };
-  }, []);
-
-  // 위치 권한, 초기 위치, watchPositionAsync 세팅
-  const initLocationTracking = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('권한 거부', '위치 권한이 없으면 지도를 사용할 수 없습니다.');
-      return;
-    }
-
-    const { coords } = await Location.getCurrentPositionAsync({});
-    console.log('bye');
-    handleLocationUpdate(coords);
-    console.log('bye2');
-    startFirebaseInterval(coords);
-
-    locationSubscription.current = await Location.watchPositionAsync(
-      {
-        accuracy: Location.Accuracy.High,
-        distanceInterval: 5,
-        timeInterval: 3000,
-      },
-      pos => handleLocationUpdate(pos.coords)
-    );
-
-  };
-
-  const handleLocationUpdate = useCallback(({ latitude, longitude }) => {
-    const newLoc = { lat: latitude, lng: longitude };
-    setLocation(newLoc);
-    mapRef.current?.animateCameraTo({
-      center: newLoc,
-      zoom: 16,
-      animation: true,
-    });
-  }, []);
-
-  const startFirebaseInterval = useCallback(
-    ({ latitude, longitude }) => {
-      updateLocationToFirebase(latitude, longitude);
-      firebaseInterval.current = setInterval(() => {
-        if (location) {
-          updateLocationToFirebase(location.lat, location.lng);
-          saveLocationHistory(location.lat, location.lng);
-        }
-      }, FIREBASE_UPDATE_INTERVAL);
-    },
-    [location]
-  );
-
-  // Firestore 'locations'에 저장
-  async function updateLocationToFirebase(lat, lng) {
-
-    const user = auth.currentUser;
-
-    if (!user) {
-      console.warn('로그인 후 사용하세요.');
-      return;
-    }
-    try {
-      await addDoc(collection(db, 'locations'), {
-        uid: user.uid,
-        location: new GeoPoint(lat, lng),
-        time: serverTimestamp()
+    // 전역 위치 구독
+    const unsub = locationUpdater.subscribe((loc) => {
+      setLocation(loc);
+      mapRef.current?.animateCameraTo?.({
+        center: { lat: loc.lat, lng: loc.lng },
+        zoom: 16,
+        animation: true,
       });
-      console.log('✅ 위치 업데이트 성공');
-    } catch (err) {
-      console.error('❌ 위치 업데이트 실패:', err);
-    }
-  }
-
-  // history용 콜렉션에 저장
-  async function saveLocationHistory(lat, lng) {
-    const user = auth.currentUser;
-    if (!user) return;
-    try {
-      await addDoc(collection(db, 'locationHistory'), {
-        uid: user.uid,
-        latitude: lat,
-        longitude: lng,
-        timestamp: serverTimestamp()
-      });
-      console.log('✅ 위치 히스토리 저장');
-    } catch (err) {
-      console.error('❌ 위치 히스토리 저장 실패:', err);
-    }
-  }
+    });
+    return unsub;
+  }, []);
 
   return (
     <View style={{ flex: 1 }}>
@@ -139,8 +48,9 @@ export default function MapScreen() {
         ref={mapRef}
         style={{ flex: 1 }}
         center={{ lat: 37.5665, lng: 126.9780, zoom: 10 }}
-        showsMyLocationButton
-        showsUserLocation
+        showsMyLocationButton={true}
+        showsUserLocation={true}
+
       />
 
       {location && (
