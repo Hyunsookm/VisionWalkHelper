@@ -29,7 +29,7 @@ import { useRef } from "react";
 
 import styles from "../styles/styles";
 
-const SERVER_URL = "http://3.39.142.7:3000/kakao-login";
+const SERVER_URL = "https://visionwalkhelper.shop/kakao-login";
 
 // 전화번호 자동 포맷 함수 (000-0000-0000)
 const formatPhoneNumber = (value) => {
