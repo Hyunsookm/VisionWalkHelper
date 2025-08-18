@@ -49,7 +49,6 @@ export default function SignupPage() {
 
     // 순수 숫자만 남겨서 길이 체크 (010-1234-5678 -> "01012345678" 길이 11)
     const digitCount = formatted.replace(/\D/g, "").length;
-
   };
 
   const handleSignup = async () => {

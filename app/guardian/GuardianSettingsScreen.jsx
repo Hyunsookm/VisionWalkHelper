@@ -16,7 +16,6 @@ import { doc, updateDoc } from "firebase/firestore";
 import Icon from "react-native-vector-icons/Feather";
 import { signOut } from "firebase/auth";
 
-
 export default function GuardianSettingsScreen() {
   const router = useRouter();
   const [fallDetectionEnabled, setFallDetectionEnabled] = useState(true);
@@ -95,7 +94,7 @@ export default function GuardianSettingsScreen() {
           onPress={() => router.push("/guardian/GuardianScreen")}
         >
           <Icon name="shopping-cart" size={24} style={styles.navIcon} />
-          <Text style={styles.navText}>기기</Text>
+          <Text style={styles.navText}>위치 확인</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -145,7 +144,6 @@ export default function GuardianSettingsScreen() {
     </SafeAreaView>
   );
 }
-
 
 const styles = StyleSheet.create({
   safeArea: {

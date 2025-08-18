@@ -165,29 +165,42 @@ export default function AccountLinkScreen() {
       </ScrollView>
 
       {/* 연동 해제 Modal */}
-      <Modal
-        visible={!!unlinkTarget}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setUnlinkTarget(null)}
+<Modal
+  visible={!!unlinkTarget}
+  transparent
+  animationType="fade"
+  onRequestClose={() => setUnlinkTarget(null)}
+>
+  <View style={styles.backdrop}>
+    <View style={styles.modalBox}>
+      <Text style={styles.modalTitle}>연동 해제</Text>
+      <Text style={styles.modalMessage}>
+        {unlinkTarget?.guardianDisplayName || unlinkTarget?.userUid}님의 연동을 해제하시겠습니까?
+      </Text>
+
+      {/* 버튼 영역 */}
+      <View style={styles.modalActions}>
+
+      {/* 확인 버튼 */}
+      <TouchableOpacity
+        style={[styles.actionBtn, { backgroundColor: "#dc2626" }]}
+        onPress={confirmUnlink}
       >
-        <View style={styles.backdrop}>
-          <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>연동 해제</Text>
-            <Text style={styles.modalMessage}>
-              {unlinkTarget?.guardianDisplayName || unlinkTarget?.userUid}님의 연동을 해제하시겠습니까?
-            </Text>
-            <TouchableOpacity
-              style={[styles.unlinkBtn]}
-              onPress={confirmUnlink}
-            >
-              <Text style={styles.unlinkBtnText}>
-                확인
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        <Text style={styles.actionBtnText}>확인</Text>
+      </TouchableOpacity>
+
+        {/* 취소 버튼 */}
+        <TouchableOpacity
+          style={[styles.actionBtn, { backgroundColor: "#6b7280" }]}
+          onPress={() => setUnlinkTarget(null)}
+        >
+          <Text style={styles.actionBtnText}>취소</Text>
+        </TouchableOpacity>
+
+      </View>
+    </View>
+  </View>
+</Modal>
 
       {/* 연동 코드 입력 Modal */}
       <Modal
@@ -241,7 +254,7 @@ export default function AccountLinkScreen() {
           onPress={() => router.push("/guardian/GuardianScreen")}
         >
           <Icon name="shopping-cart" size={24} style={styles.navIcon} />
-          <Text style={styles.navText}>기기</Text>
+          <Text style={styles.navText}>위치 확인</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -385,5 +398,25 @@ const styles = StyleSheet.create({
   activeNavItem: {
     backgroundColor: "#f3f4f6",
     borderRadius: 8,
+  },
+
+  modalActions: {
+    flexDirection: "row",          // 가로 정렬
+    justifyContent: "space-between",
+    marginTop: 16,
+    gap: 8,                        // 버튼 간격 (RN 0.71 이상 지원)
+  },
+
+  actionBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 6,
+    alignItems: "center",
+  },
+
+  actionBtnText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#fff",
   },
 });
