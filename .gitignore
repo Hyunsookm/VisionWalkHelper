@@ -246,4 +246,4 @@ ios/.xcode.env.local
 
 expo-env.d.ts
 
-app.json
+/app.json
