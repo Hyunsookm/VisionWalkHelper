@@ -90,7 +90,7 @@ export default function GuardianScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>보호자</Text>
+        <Text style={styles.headerTitle}>위치 확인</Text>
         <TouchableOpacity>
           <Feather name="bell" size={24} />
         </TouchableOpacity>
