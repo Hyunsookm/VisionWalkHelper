@@ -245,3 +245,5 @@ firebase/firebaseConfig.js
 ios/.xcode.env.local
 
 expo-env.d.ts
+
+app.json

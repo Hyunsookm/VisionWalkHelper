@@ -76,7 +76,9 @@
       "router": {},
       "eas": {
         "projectId": "15990f46-b918-459b-b7bc-e537a8f7961a"
-      }
+      },
+      "NAVER_API_KEY_ID": "xbc3hmxcbv",
+      "NAVER_API_KEY": "XYLX3RCFeaeE2LCO8DtHw74ncmHLCen9bya5JaX0"
     }
   }
 }
