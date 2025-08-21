@@ -166,15 +166,7 @@ export default function UserAccountScreen() {
 
 return (
   <SafeAreaView style={styles.safeArea}>
-    {/* Header */}
-    <View style={styles.header}>
-      <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn}>
-        <Feather name="chevron-left" size={24} />
-      </TouchableOpacity>
-      <Text style={styles.headerTitle}>사용자 계정</Text>
-      <View style={styles.headerBtn} />
-    </View>
-
+    
     <ScrollView contentContainerStyle={styles.content}>
       {/* Profile */}
       <View style={styles.profileSection}>

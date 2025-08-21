@@ -114,12 +114,6 @@ export default function DeviceSettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>기기 설정</Text>
-        <TouchableOpacity>
-          <Icon name="bell" size={24} />
-        </TouchableOpacity>
-      </View>
 
       <View style={styles.content}>
         <View style={styles.messageContainer}>

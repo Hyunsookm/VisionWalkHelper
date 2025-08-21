@@ -93,7 +93,6 @@ export default function DeviceDetailScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>기기 상세 설정</Text>
         <TouchableOpacity onPress={() => router.back()}>
           <Icon name="arrow-left" size={24} />
         </TouchableOpacity>

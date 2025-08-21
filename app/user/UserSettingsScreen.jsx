@@ -59,15 +59,7 @@ export default function UserSettingScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* ───────── Header ───────── */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
-          <Feather name="chevron-left" size={24} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>설정</Text>
-        <View style={styles.headerButton} />
-      </View>
-
+      
       {/* ───────── Content ───────── */}
       <View style={styles.container}>
         {/* 로그아웃 버튼 */}

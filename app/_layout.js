@@ -43,11 +43,11 @@ export default function RootLayout() {
 
         {/* --- 사용자 관련 화면 --- */}
         <Stack.Screen name="user/DeviceSettingsScreen" options={{ title: '기기 설정' }} />
-        <Stack.Screen name="user/UserAccountScreen" options={{ title: '내 계정' }} />
-        <Stack.Screen name="user/UserSettingsScreen" options={{ title: '사용자 설정' }} />
+        <Stack.Screen name="user/UserAccountScreen" options={{ title: '사용자 계정' }} />
+        <Stack.Screen name="user/UserSettingsScreen" options={{ title: '설정' }} />
         
         {/* 동적 경로 화면 (예: 기기 상세 정보) */}
-        <Stack.Screen name="user/[deviceId]/index" options={{ title: '기기 정보' }} />
+        <Stack.Screen name="user/[deviceId]/index" options={{ title: '기기 상세 설정' }} />
         
       </Stack>
     </SafeAreaProvider>
