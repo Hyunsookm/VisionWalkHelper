@@ -3,27 +3,62 @@
 "use client";
 
 import { useRouter } from "expo-router";
-import { Alert, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useState } from "react";
+import { Alert, SafeAreaView, Text, TouchableOpacity, View } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 
+import { styles } from "../styles/guardianStyles";
+
+// --- 1. 헤더 컴포넌트 분리 ---
+// title을 props로 받아 재사용 가능하도록 만듭니다.
+const Header = ({ title }) => {
+  return (
+    <View style={styles.header}>
+      <Text style={styles.headerTitle}>{title}</Text>
+      <TouchableOpacity onPress={() => Alert.alert("알림", "알림 화면으로 이동합니다.")}>
+        <Icon name="bell" size={24} />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+// --- 2. 사용자 카드 컴포넌트 분리 ---
+// user 정보와 onPress 함수를 props로 받습니다.
+const UserCard = ({ user, onPress }) => {
+  return (
+    <TouchableOpacity style={styles.userCard} onPress={onPress}>
+      <View style={styles.userInfo}>
+        <View style={styles.userAvatar}>
+          <Icon name="user" size={24} color="#fff" />
+        </View>
+        <Text style={styles.userName}>{user.name}</Text>
+      </View>
+      <Icon name="chevron-right" size={20} color="#9ca3af" />
+    </TouchableOpacity>
+  );
+};
+
+// --- ✨ 메인 화면 컴포넌트 ---
 export default function GuardianScreen() {
   const router = useRouter();
 
-  const handleUser1 = () => {
-      Alert.alert("알림", "사용자 1의 상세 정보를 확인합니다.");
-      router.push("/map/MapGuardian");
+  // --- 3. 사용자 데이터를 state로 관리 ---
+  const [users, setUsers] = useState([
+    { id: 1, name: "사용자 1" },
+    { id: 2, name: "사용자 2" },
+  ]);
+
+  // 사용자 카드를 눌렀을 때 실행될 공통 함수
+  const handleUserPress = (user) => {
+    Alert.alert("알림", `${user.name}의 상세 정보를 확인합니다.`);
+    router.push("/map/MapGuardian");
   };
 
-  const handleUser2 = () => {
-    Alert.alert("알림", "사용자 2의 상세 정보를 확인합니다.");
-    router.push("/map/MapGuardian")
-  };
-
-  // ✨ 새 사용자 연결 버튼 → AccountLinkScreen으로 이동
   const handleAddUser = () => {
     router.push("/guardian/AccountLinkScreen");
   };
 
+  // 하단 네비게이션 핸들러
   const handleLocationNav = () => {
     router.push("/guardian/GuardianScreen");
   };
@@ -38,36 +73,19 @@ export default function GuardianScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>보호자</Text>
-        <TouchableOpacity>
-          <Icon name="bell" size={24} />
-        </TouchableOpacity>
-      </View>
+      {/* 분리된 Header 컴포넌트 사용 */}
+      <Header title="보호자" />
 
       <View style={styles.content}>
-        {/* User List */}
+        {/* User List: map 함수로 동적 렌더링 */}
         <View style={styles.userList}>
-          <TouchableOpacity style={styles.userCard} onPress={handleUser1}>
-            <View style={styles.userInfo}>
-              <View style={styles.userAvatar}>
-                <Icon name="user" size={24} color="#fff" />
-              </View>
-              <Text style={styles.userName}>사용자 1</Text>
-            </View>
-            <Icon name="chevron-right" size={20} color="#9ca3af" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.userCard} onPress={handleUser2}>
-            <View style={styles.userInfo}>
-              <View style={styles.userAvatar}>
-                <Icon name="user" size={24} color="#fff" />
-              </View>
-              <Text style={styles.userName}>사용자 2</Text>
-            </View>
-            <Icon name="chevron-right" size={20} color="#9ca3af" />
-          </TouchableOpacity>
+          {users.map((user) => (
+            <UserCard 
+              key={user.id} 
+              user={user} 
+              onPress={() => handleUserPress(user)} 
+            />
+          ))}
         </View>
 
         {/* Add User Button */}
@@ -76,7 +94,7 @@ export default function GuardianScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Bottom Navigation */}
+      {/* Bottom Navigation (이 부분도 나중에 별도 컴포넌트로 분리하면 좋습니다) */}
       <View style={styles.bottomNav}>
         <TouchableOpacity
           style={[styles.navItem, styles.activeNavItem]}
@@ -99,91 +117,3 @@ export default function GuardianScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f9fafb",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
-    backgroundColor: "#fff",
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: "center",
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 24,
-  },
-  userList: {
-    marginBottom: 24,
-  },
-  userCard: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#ecfdf5",
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-  },
-  userInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  userAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#000",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 16,
-  },
-  userName: {
-    fontSize: 18,
-  },
-  addButton: {
-    backgroundColor: "#22c55e",
-    borderRadius: 8,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-  addButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "500",
-  },
-  bottomNav: {
-    flexDirection: "row",
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-    backgroundColor: "#fff",
-  },
-  navItem: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-  activeNavItem: {
-    backgroundColor: "#f3f4f6",
-    borderRadius: 8,
-  },
-  navIcon: {
-    marginBottom: 4,
-  },
-  navText: {
-    fontSize: 12,
-  },
-});

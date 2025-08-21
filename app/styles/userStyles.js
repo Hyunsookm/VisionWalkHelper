@@ -2,7 +2,7 @@
 import { StyleSheet } from "react-native";
 
 /**
- * 통합 팔레트 (필요 시 컴포넌트에서도 가져다 쓸 수 있게 export)
+ * 공통 팔레트
  */
 export const COLORS = {
   bg: "#f9fafb",
@@ -10,9 +10,9 @@ export const COLORS = {
   border: "#e5e7eb",
   text: "#111827",
   textSecondary: "#6b7280",
-  primary: "#22c55e",   // 초록
-  danger: "#ef4444",    // 빨강
-  info: "#3b82f6",      // 파랑
+  primary: "#22c55e",
+  danger: "#ef4444",
+  info: "#3b82f6",
   muted: "#f3f4f6",
   overlay: "rgba(0,0,0,0.5)",
 };
@@ -21,7 +21,30 @@ export const styles = StyleSheet.create({
   // ───────────────────────── Layout / Container ─────────────────────────
   safeArea: { flex: 1, backgroundColor: COLORS.bg },
   container: { flex: 1, backgroundColor: COLORS.bg },
+
+  // ✅ 요청 블록의 content 형태로 업데이트 (패딩 24)
   content: { flex: 1, paddingHorizontal: 24, paddingVertical: 24 },
+
+  // 기존 가운데 정렬이 필요한 화면용으로 보존
+  contentCentered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  contentPadded: { flex: 1, paddingHorizontal: 24, paddingVertical: 24 },
+
+  // ✅ 요청 블록의 row/rowText
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  rowText: { fontSize: 18, fontWeight: "500", color: COLORS.text },
 
   // ───────────────────────── Header ─────────────────────────
   header: {
@@ -35,6 +58,7 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     height: 56,
   },
+  // ✅ 요청 블록의 headerTitle 스펙 포함(폰트 18/600)
   headerTitle: {
     flex: 1,
     textAlign: "center",
@@ -43,8 +67,7 @@ export const styles = StyleSheet.create({
     color: COLORS.text,
   },
   headerButton: { width: 32, alignItems: "center" },
-  // 호환용(일부 파일에서 headerBtn 사용)
-  headerBtn: { width: 32, alignItems: "center" },
+  headerBtn: { width: 32, alignItems: "center" }, // 호환용
 
   // ───────────────────────── Text Blocks ─────────────────────────
   sectionTitle: { fontSize: 16, fontWeight: "600", marginBottom: 12, color: COLORS.text },
@@ -52,6 +75,9 @@ export const styles = StyleSheet.create({
   emptyText: { color: COLORS.textSecondary, marginBottom: 16 },
   messageContainer: { marginBottom: 32 },
   messageText: { fontSize: 18, fontWeight: "500", textAlign: "center", lineHeight: 28, color: COLORS.text },
+
+  // ✅ 요청 블록의 modalMessage (새로 추가)
+  modalMessage: { fontSize: 16, marginBottom: 24, textAlign: "center", color: COLORS.text },
 
   // ───────────────────────── Cards / List Items ─────────────────────────
   profileSection: { marginBottom: 24 },
@@ -76,6 +102,7 @@ export const styles = StyleSheet.create({
   },
 
   // ───────────────────────── Settings Rows ─────────────────────────
+  // ✅ 요청 블록 그대로 매핑
   settingItem: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -89,7 +116,6 @@ export const styles = StyleSheet.create({
   settingSubtitle: { fontSize: 14, color: "#666" },
 
   // ───────────────────────── Buttons ─────────────────────────
-  // 공통
   primaryButton: {
     backgroundColor: COLORS.primary,
     borderRadius: 8,
@@ -108,6 +134,7 @@ export const styles = StyleSheet.create({
   },
   dangerButtonText: { color: COLORS.white, fontSize: 18, fontWeight: "500" },
 
+  // ✅ 요청 블록의 smallButton/smallButtonText
   smallButton: {
     backgroundColor: COLORS.primary,
     paddingVertical: 6,
@@ -116,7 +143,30 @@ export const styles = StyleSheet.create({
   },
   smallButtonText: { color: COLORS.white, fontSize: 14 },
 
-  // 화면별 명시적 버튼 (기존 키와 매핑)
+  linkButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    width: "100%",
+    alignItems: "center",
+    marginTop: 16,
+  },
+  linkButtonText: { color: COLORS.white, fontSize: 18, fontWeight: "500" },
+
+  // ✅ 요청 블록의 logoutButton/logoutButtonText
+  logoutButton: {
+    backgroundColor: COLORS.danger,
+    borderRadius: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    width: "100%",
+    alignItems: "center",
+    marginTop: 12,
+  },
+  logoutButtonText: { color: COLORS.white, fontSize: 18, fontWeight: "500" },
+
+  // 화면별 명시적 버튼(기존 키와 매핑)
   connectButton: {
     backgroundColor: COLORS.primary,
     borderRadius: 8,
@@ -127,7 +177,6 @@ export const styles = StyleSheet.create({
     marginBottom: 12,
   },
   connectButtonText: { color: COLORS.white, fontSize: 18, fontWeight: "500" },
-
   disconnectButton: {
     backgroundColor: COLORS.danger,
     borderRadius: 8,
@@ -138,24 +187,7 @@ export const styles = StyleSheet.create({
   },
   disconnectButtonText: { color: COLORS.white, fontSize: 16, fontWeight: "500" },
 
-  linkButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 8,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginTop: 16,
-  },
-  linkButtonText: { color: COLORS.white, fontSize: 18, fontWeight: "500" },
-
-  logoutButton: {
-    backgroundColor: COLORS.danger,
-    borderRadius: 8,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  logoutButtonText: { color: COLORS.white, fontSize: 18, fontWeight: "500" },
-
+  // ✅ 요청 블록의 volumeControls/volumeButton
   volumeControls: { flexDirection: "row", gap: 8 },
   volumeButton: {
     backgroundColor: COLORS.info,
@@ -165,6 +197,7 @@ export const styles = StyleSheet.create({
   },
 
   // ───────────────────────── Bottom Navigation ─────────────────────────
+  // ✅ 요청 블록의 bottomNav/navItem/activeNavItem/navIcon/navText
   bottomNav: {
     flexDirection: "row",
     borderTopWidth: 1,
@@ -172,20 +205,28 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
   },
   navItem: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 8 },
+  activeNavItem: { backgroundColor: COLORS.muted, borderRadius: 8 },
+  navItemActive: { backgroundColor: COLORS.muted, borderRadius: 8 }, // 호환용
   navIcon: { marginBottom: 4 },
   navText: { fontSize: 12, color: COLORS.textSecondary },
   navTextActive: { color: COLORS.primary },
 
-  // 활성 아이템 (두 이름 모두 지원)
-  navItemActive: { backgroundColor: COLORS.muted, borderRadius: 8 },
-  activeNavItem: { backgroundColor: COLORS.muted, borderRadius: 8 },
-
   // ───────────────────────── Modals / Overlays ─────────────────────────
-  // 배경(두 이름 모두 지원)
-  modalBackdrop: { flex: 1, backgroundColor: COLORS.overlay, justifyContent: "center", alignItems: "center", padding: 16 },
-  backdrop: { flex: 1, backgroundColor: COLORS.overlay, justifyContent: "center", alignItems: "center", padding: 16 },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: COLORS.overlay,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+  },
+  backdrop: {
+    flex: 1,
+    backgroundColor: COLORS.overlay,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+  },
 
-  // 컨텐츠(두 이름 모두 지원)
   modalContent: {
     width: "100%",
     maxWidth: 320,
@@ -193,6 +234,8 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 24,
   },
+
+  // 🔁 중복되던 modalBox는 한 번만 선언 (높이 제한 + 공간 배분)
   modalBox: {
     width: "100%",
     maxWidth: 320,
@@ -244,6 +287,14 @@ export const styles = StyleSheet.create({
   },
 
   // 모달 버튼
+  modalButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 12,
+    borderRadius: 6,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  modalButtonText: { color: COLORS.white, fontSize: 16, fontWeight: "500" },
   confirmBtn: {
     flex: 1,
     paddingVertical: 12,
@@ -270,3 +321,5 @@ export const styles = StyleSheet.create({
     alignSelf: "center",
   },
 });
+
+export default styles;

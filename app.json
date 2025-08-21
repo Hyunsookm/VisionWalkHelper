@@ -40,6 +40,14 @@
         "android.permission.ACCESS_COARSE_LOCATION"
       ]
     },
+    "statusBar": {
+      "backgroundColor": "#f9fafb",
+      "translucent": false
+    },
+    "navigationBar": {
+      "visible": "standard",
+      "backgroundColor": "#ffffff"
+    },
     "web": {
       "bundler": "metro",
       "output": "static",
