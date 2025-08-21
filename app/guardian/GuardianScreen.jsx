@@ -121,13 +121,6 @@ export default function GuardianScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>위치 확인</Text>
-        <TouchableOpacity>
-          <Feather name="bell" size={24} />
-        </TouchableOpacity>
-      </View>
 
       {/* Content (스크롤) */}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
@@ -183,80 +176,3 @@ export default function GuardianScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  // 공통 레이아웃
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
-    backgroundColor: "#fff",
-  },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, fontWeight: "600" },
-
-  content: {
-    padding: 24,
-    paddingBottom: 40,      // 하단바와 겹치지 않도록
-  },
-
-  // 섹션/빈 상태 문구 (AccountLinkScreen과 동일 톤)
-  sectionTitle: { fontSize: 16, fontWeight: "600", marginBottom: 12 },
-  emptyText: { color: "#9ca3af", fontSize: 13, lineHeight: 18, marginBottom: 12 },
-
-  // 사용자 카드
-  userCard: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#ecfdf5",
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-  },
-  userInfo: { flexDirection: "row", alignItems: "center" },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#000",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 16,
-  },
-  userName: { fontSize: 18 },
-
-  // 계정 연동 버튼 (첫 번째 스샷 맞춤)
-  linkButton: {
-    width: "100%",
-    height: 52,
-    borderRadius: 12,
-    backgroundColor: "#22c55e",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
-  },
-  linkButtonText: { color: "#fff", fontSize: 16, fontWeight: "700", letterSpacing: 0.2 },
-
-  // 하단 네비 (고정)
-  bottomNav: {
-    flexDirection: "row",
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-    backgroundColor: "#fff",
-  },
-  navItem: { flex: 1, alignItems: "center", paddingVertical: 8 },
-  activeNavItem: { backgroundColor: "#f3f4f6", borderRadius: 8 },
-  navIcon: { marginBottom: 4 },
-  navText: { fontSize: 12 },
-});

@@ -29,6 +29,8 @@ import {
 } from "firebase/firestore";
 import Icon from "react-native-vector-icons/Feather";
 
+import { styles } from "../styles/guardianStyles";
+
 export default function AccountLinkScreen() {
   const router = useRouter();
   const [unlinkTarget, setUnlinkTarget] = useState(null);
@@ -122,16 +124,6 @@ export default function AccountLinkScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn}>
-          <Feather name="chevron-left" size={24} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>연동 관리</Text>
-        <TouchableOpacity>
-          <Feather name="bell" size={24} />
-        </TouchableOpacity>
-      </View>
 
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.sectionTitle}>연동된 사용자</Text>
@@ -276,147 +268,3 @@ export default function AccountLinkScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    height: 56,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
-    backgroundColor: "#fff",
-  },
-  headerBtn: { width: 32, alignItems: "center" },
-  headerTitle: { fontSize: 18, fontWeight: "600" },
-
-  content: { padding: 24 },
-  sectionTitle: { fontSize: 16, fontWeight: "600", marginBottom: 12 },
-  emptyText: { color: "#6b7280", marginBottom: 16 },
-
-  userCard: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#ecfdf5",
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-  },
-  userInfo: { flexDirection: "row", alignItems: "center" },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#000",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 16,
-  },
-  userName: { fontSize: 18 },
-
-  linkButton: {
-    backgroundColor: "#22c55e",
-    borderRadius: 8,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginTop: 16,
-  },
-  linkButtonText: { color: "#fff", fontSize: 18, fontWeight: "500" },
-
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-  },
-  modalBox: {
-    width: "100%",
-    maxWidth: 320,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 24,
-  },
-  modalTitle: { fontSize: 18, fontWeight: "600", marginBottom: 12 },
-  modalMessage: { fontSize: 16, marginBottom: 24, textAlign: "center" },
-
-  confirmBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 6,
-    alignItems: "center",
-    backgroundColor: "#22c55e",
-  },
-  unlinkBtn: {     
-    flex: 1,
-    minHeight: 40,
-    paddingVertical: 10,
-    borderRadius: 6,
-    alignItems: "center",
-    backgroundColor: "#dc2626",
-    marginTop: 12},
-  confirmBtnText: { fontSize: 16, fontWeight: "500", color: "#fff" },
-  cancelText: { color: "#fff" },
-  cancelBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 6,
-    alignItems: "center",
-    backgroundColor: "#dc2626",
-  },
-
-  codeInput: {
-    width: "100%",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 6,
-    padding: 8,
-    marginBottom: 16,
-  },
-  modalActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-
-  bottomNav: {
-    flexDirection: "row",
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-    backgroundColor: "#fff",
-  },
-  confirmBtnText: { fontSize: 16, fontWeight: "500", color: "#fff" },
-  unlinkBtnText: {   
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#fff", }, // 여기에 추가됨
-  navItem: { flex: 1, alignItems: "center", padding: 8 },
-  navText: { fontSize: 12, color: "#6b7280", marginTop: 4 },
-  navTextActive: { color: "#000000" },
-  activeNavItem: {
-    backgroundColor: "#f3f4f6",
-    borderRadius: 8,
-  },
-
-  modalActions: {
-    flexDirection: "row",          // 가로 정렬
-    justifyContent: "space-between",
-    marginTop: 16,
-    gap: 8,                        // 버튼 간격 (RN 0.71 이상 지원)
-  },
-
-  actionBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 6,
-    alignItems: "center",
-  },
-
-  actionBtnText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#fff",
-  },
-});

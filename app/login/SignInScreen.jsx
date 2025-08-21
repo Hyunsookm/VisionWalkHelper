@@ -103,7 +103,6 @@ export default function SignupPage() {
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}>
         <SafeAreaView style={styles.container}>
           <View style={styles.form}>
-            <Text style={styles.title}>회원가입</Text>
 
             <View style={styles.inputGroup}>
               <Icon name="phone" size={20} style={styles.icon} />

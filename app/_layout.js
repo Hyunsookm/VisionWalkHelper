@@ -30,11 +30,11 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="RoleSelectionScreen" options={{ headerShown: false }} />
         <Stack.Screen name="login/LoginScreen" options={{ headerShown: false }} />
-        <Stack.Screen name="login/SignInScreen" options={{ title: '회원가입' }} />
+        <Stack.Screen name="login/SignInScreen" options={{ title: '회원가입', headerRight: () => null }} />
 
         {/* --- 보호자 관련 화면 --- */}
-        <Stack.Screen name="guardian/GuardianScreen" options={{ title: '보호자' }} />
-        <Stack.Screen name="guardian/AccountLinkScreen" options={{ title: '계정 연결' }} />
+        <Stack.Screen name="guardian/GuardianScreen" options={{ title: '위치 확인' }} />
+        <Stack.Screen name="guardian/AccountLinkScreen" options={{ title: '연동 관리' }} />
         <Stack.Screen name="guardian/GuardianSettingsScreen" options={{ title: '설정' }} />
 
         {/* --- 지도 관련 화면 --- */}

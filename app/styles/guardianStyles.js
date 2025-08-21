@@ -83,13 +83,15 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 18,
     fontWeight: '600',
-    
   },
 
   // ───────────────────────── 콘텐츠/섹션 ─────────────────────────
-  content: { flex: 1, paddingHorizontal: 24, paddingVertical: 24 },
+  content: {
+    padding: 24,
+    paddingBottom: 40, // 하단바와 겹치지 않도록
+  },
   sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 12 },
-  emptyText: { color: '#6b7280', marginBottom: 16 },
+  emptyText: { color: "#9ca3af", fontSize: 13, lineHeight: 18, marginBottom: 12 },
 
   // 행 형태(설정/리스트 셀)
   row: {
@@ -122,8 +124,22 @@ export const styles = StyleSheet.create({
   // ───────────────────────── 기본 버튼(추가/연결) ─────────────────────────
   primaryButton: basePrimaryButton,
   primaryButtonText: basePrimaryButtonText,
-  linkButton: basePrimaryButton, // alias
-  linkButtonText: basePrimaryButtonText, // alias
+  // 계정 연동 버튼: 구체적인 스타일로 업데이트
+  linkButton: {
+    width: "100%",
+    height: 52,
+    borderRadius: 12,
+    backgroundColor: "#22c55e",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  linkButtonText: { color: "#fff", fontSize: 16, fontWeight: "700", letterSpacing: 0.2 },
   addButton: basePrimaryButton, // alias
   addButtonText: basePrimaryButtonText, // alias
 
@@ -196,7 +212,7 @@ export const styles = StyleSheet.create({
   navItem: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 },
   activeNavItem: { backgroundColor: '#f3f4f6', borderRadius: 8 },
   navIcon: { marginBottom: 4 },
-  navText: { fontSize: 12, color: '#6b7280', marginTop: 4 }, // marginTop 추가 반영
+  navText: { fontSize: 12, color: '#6b7280' },
   navTextActive: { color: '#000000' },
 });
 
