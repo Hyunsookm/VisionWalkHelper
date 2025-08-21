@@ -31,7 +31,8 @@
       android:roundIcon="@mipmap/ic_launcher_round"
       android:allowBackup="true"
       android:theme="@style/AppTheme"
-      android:supportsRtl="true">
+      android:supportsRtl="true"
+      android:usesCleartextTraffic="true">
 
     <!-- Kakao SDK AppKey를 manifestPlaceholders에서 받아오기 -->
     <meta-data

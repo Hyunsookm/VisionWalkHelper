@@ -30,6 +30,38 @@ import {
 } from "firebase/firestore";
 
 
+import { styles } from "../styles/guardianStyles";
+
+// --- 1. 헤더 컴포넌트 분리 ---
+// title을 props로 받아 재사용 가능하도록 만듭니다.
+const Header = ({ title }) => {
+  return (
+    <View style={styles.header}>
+      <Text style={styles.headerTitle}>{title}</Text>
+      <TouchableOpacity onPress={() => Alert.alert("알림", "알림 화면으로 이동합니다.")}>
+        <Icon name="bell" size={24} />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+// --- 2. 사용자 카드 컴포넌트 분리 ---
+// user 정보와 onPress 함수를 props로 받습니다.
+const UserCard = ({ user, onPress }) => {
+  return (
+    <TouchableOpacity style={styles.userCard} onPress={onPress}>
+      <View style={styles.userInfo}>
+        <View style={styles.userAvatar}>
+          <Icon name="user" size={24} color="#fff" />
+        </View>
+        <Text style={styles.userName}>{user.name}</Text>
+      </View>
+      <Icon name="chevron-right" size={20} color="#9ca3af" />
+    </TouchableOpacity>
+  );
+};
+
+// --- ✨ 메인 화면 컴포넌트 ---
 export default function GuardianScreen() {
  const router = useRouter();
  const [unlinkTarget, setUnlinkTarget] = useState(null);
@@ -74,6 +106,7 @@ export default function GuardianScreen() {
     });
   };
 
+  // 하단 네비게이션 핸들러
   const handleLocationNav = () => {
     router.push("/guardian/GuardianScreen");
   };

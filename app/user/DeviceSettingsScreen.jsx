@@ -17,6 +17,8 @@ import bleManager from "../../utils/ble/bleManager";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useCallback, useState } from "react";
 
+import { styles } from "../styles/userStyles";
+
 const requestBLEPermissions = async () => {
   if (Platform.OS === "android") {
     const sdkInt = parseInt(Platform.Version, 10);
@@ -184,85 +186,3 @@ export default function DeviceSettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
-    backgroundColor: "#fff",
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: "center",
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  content: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 24,
-  },
-  messageContainer: {
-    marginBottom: 32,
-  },
-  messageText: {
-    fontSize: 18,
-    fontWeight: "500",
-    textAlign: "center",
-    lineHeight: 28,
-  },
-  connectButton: {
-    backgroundColor: "#22c55e",
-    borderRadius: 8,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    width: "100%",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  connectButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "500",
-  },
-  disconnectButton: {
-    backgroundColor: "#ef4444",
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    width: "100%",
-    alignItems: "center",
-  },
-  disconnectButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  bottomNav: {
-    flexDirection: "row",
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-    backgroundColor: "#fff",
-  },
-  navItem: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-  activeNavItem: {
-    backgroundColor: "#f3f4f6",
-    borderRadius: 8,
-  },
-  navIcon: {
-    marginBottom: 4,
-  },
-  navText: {
-    fontSize: 12,
-  },
-});

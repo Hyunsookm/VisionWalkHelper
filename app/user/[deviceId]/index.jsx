@@ -15,6 +15,8 @@ import {
   writeVolumeByte,
 } from "../../../utils/ble/bleConfigUtils";
 
+import { styles } from "../../styles/userStyles";
+
 export default function DeviceDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -187,54 +189,3 @@ export default function DeviceDetailScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
-    backgroundColor: "#fff",
-  },
-  headerTitle: { fontSize: 18, fontWeight: "600" },
-  content: { flex: 1, paddingHorizontal: 24, paddingVertical: 24 },
-  settingItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
-  },
-  settingLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
-  settingTitle: { fontSize: 18, fontWeight: "500" },
-  settingSubtitle: { fontSize: 14, color: "#666" },
-  smallButton: {
-    backgroundColor: "#22c55e",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-  },
-  smallButtonText: { color: "#fff", fontSize: 14 },
-  volumeControls: { flexDirection: "row", gap: 8 },
-  volumeButton: {
-    backgroundColor: "#3b82f6",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-  },
-  bottomNav: {
-    flexDirection: "row",
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-    backgroundColor: "#fff",
-  },
-  navItem: { flex: 1, alignItems: "center", paddingVertical: 8 },
-  activeNavItem: { backgroundColor: "#f3f4f6", borderRadius: 8 },
-  navIcon: { marginBottom: 4 },
-  navText: { fontSize: 12 },
-});
