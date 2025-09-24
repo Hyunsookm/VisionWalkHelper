@@ -13,7 +13,9 @@ import {
   writeLightByte,
   writeAlarmByte,
   writeVolumeByte,
+  subscribeToFallDetection,
 } from "../../../utils/ble/bleConfigUtils";
+import { getAuthInstance, db } from "../../../firebase/firebaseConfig";
 
 import { styles } from "../../styles/userStyles";
 
@@ -48,11 +50,20 @@ export default function DeviceDetailScreen() {
 
   useEffect(() => {
     if (!device) return;
-    const subscription = readBatteryByte(device, setBatteryLevel);
+
+    // 1. 배터리 레벨 구독 시작
+    const batterySubscription = readBatteryByte(device, setBatteryLevel);
+
+    // 2. 낙상 감지 구독 시작
+    const auth = getAuthInstance();
+    const fallSubscription = subscribeToFallDetection(device, auth, db);
+
+    // 3. 화면이 사라질 때 모든 구독을 정리(clean-up)
     return () => {
-      subscription?.remove?.();
+      batterySubscription?.remove?.();
+      fallSubscription?.remove?.();
     };
-  }, [device]);
+  }, [device]); // device가 연결되면 구독 시작
 
   // 라이트 토글
   const toggleLight = async (newVal) => {
@@ -92,11 +103,6 @@ export default function DeviceDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Icon name="arrow-left" size={24} />
-        </TouchableOpacity>
-      </View>
       <View style={styles.content}>
         <View style={styles.settingItem}>
           <View style={styles.settingLeft}>

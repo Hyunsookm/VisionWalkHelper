@@ -217,6 +217,7 @@ async function fetchNaverAddress(lat, lng) {
     const KEY = Constants.expoConfig?.extra?.NAVER_API_KEY;
     if (!ID || !KEY) return null;
 
+    console.log(lat);
     const url =
       "https://maps.apigw.ntruss.com/map-reversegeocode/v2/gc" +
       `?coords=${encodeURIComponent(lng)},${encodeURIComponent(lat)}` +

@@ -116,11 +116,14 @@ export default function DeviceSettingsScreen() {
     <SafeAreaView style={styles.container}>
 
       <View style={styles.content}>
-        <View style={styles.messageContainer}>
-          <Text style={styles.messageText}>
-            아직 연동된 기기가{`\n`}없습니다~
-          </Text>
-        </View>
+          {/* 1. connectedDeviceId가 없을 때만 "연동된 기기 없음" 메시지를 표시합니다. */}
+          {!connectedDeviceId && (
+            <View style={styles.messageContainer}>
+              <Text style={styles.messageText}>
+                아직 연동된 기기가{`\n`}없습니다~
+              </Text>
+            </View>
+          )}
 
         {initializing || loading ? (
           <ActivityIndicator size="large" color="#22c55e" />
