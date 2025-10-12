@@ -25,6 +25,18 @@ export default function UserSettingScreen() {
   const [pushEnabled, setPushEnabled] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
 
+  const deviceId = "1234-5678";
+
+   const handleGoDeviceDetail = () => {
+     try {
+       router.push({ pathname: "/user/[deviceId]", params: { deviceId } });
+       // 이렇게 하면 최종 이동 경로: /user/1234-5678
+     } catch (e) {
+       Alert.alert("이동 실패", e.message);
+     }
+   };
+
+
   // 로그아웃 핸들러
   const handleLogout = async () => {
     try {
@@ -78,6 +90,12 @@ export default function UserSettingScreen() {
           <Text style={styles.rowText}>지도로 가기</Text>
           <Feather name="chevron-right" size={20} />
         </TouchableOpacity>
+
+        <TouchableOpacity style={styles.row} onPress={handleGoDeviceDetail}>
+          <Text style={styles.rowText}>ble로 가기</Text>
+          <Feather name="chevron-right" size={20} />
+        </TouchableOpacity>
+
 
         {/* 푸시 알림 토글 */}
         <View style={styles.row}>

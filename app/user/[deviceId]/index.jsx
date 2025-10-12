@@ -16,6 +16,7 @@ import {
   subscribeToFallDetection,
 } from "../../../utils/ble/bleConfigUtils";
 import { getAuthInstance, db } from "../../../firebase/firebaseConfig";
+import { addDoc, collection, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 
 import { styles } from "../../styles/userStyles";
 
@@ -30,6 +31,61 @@ export default function DeviceDetailScreen() {
   const [isAlarmOn, setIsAlarmOn] = useState(false);           // ← 추가
   const [volumeLevel, setVolumeLevel] = useState(0);
   const [batteryLevel, setBatteryLevel] = useState(null);
+
+  async function resolveGuardianUids(userUid) {
+    try {
+      const q = query(
+        collection(db, "peers"),
+        where("userUid", "==", userUid),
+        where("status", "==", "linked")
+      );
+      const snap = await getDocs(q);
+      const uids = [];
+      snap.forEach((d) => {
+        const g = d.data()?.guardianUid;
+        if (g) uids.push(g);
+      });
+      return Array.from(new Set(uids));
+    } catch (e) {
+      console.warn("resolveGuardianUids error:", e);
+      return [];
+    }
+  }
+
+useEffect(() => {
+  const auth = getAuthInstance();
+  let interval;
+
+  async function createAutoAlert() {
+    try {
+      const userUid = auth.currentUser?.uid;
+      if (!userUid) return;
+      const guardians = await resolveGuardianUids(userUid);
+      await addDoc(collection(db, "alerts"), {
+        userUid,
+        guardianUids: guardians,
+        type: "fall",
+        deviceId: device?.id || "debug",
+        createdAt: serverTimestamp(),
+        status: "new",
+        extra: { autoTest: true }
+      });
+      console.log("✅ 테스트 alert 문서 생성 완료");
+    } catch (e) {
+      console.warn("자동 테스트 alert 생성 실패:", e);
+    }
+  }
+
+  // 10초마다 실행
+  interval = setInterval(() => {
+    createAutoAlert();
+  }, 10000);
+
+  // 화면 사라지면 중지
+  return () => clearInterval(interval);
+}, [device]);
+
+
 
   useEffect(() => {
     if (!deviceId) {
@@ -55,8 +111,9 @@ export default function DeviceDetailScreen() {
     const batterySubscription = readBatteryByte(device, setBatteryLevel);
 
     // 2. 낙상 감지 구독 시작
-    const auth = getAuthInstance();
-    const fallSubscription = subscribeToFallDetection(device, auth, db);
+    const fallSubscription = subscribeToFallDetection(device, auth, db, {
+      guardianUidsResolver: resolveGuardianUids, // 위 함수 그대로 전달
+    });
 
     // 3. 화면이 사라질 때 모든 구독을 정리(clean-up)
     return () => {
