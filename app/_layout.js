@@ -1,9 +1,22 @@
 // app/_layout.js
 
 import { Stack } from 'expo-router';
-import { StatusBar, TouchableOpacity, Alert } from 'react-native';
+import { StatusBar, TouchableOpacity, Alert, Platform } from 'react-native';
+import * as Notifications from "expo-notifications";
+
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Feather';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,   // iOS: 배너 알림
+    shouldShowList: true,     // iOS: 알림 센터
+    shouldShowAlert: Platform.OS === "android", // Android 표시
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
+
 
 export default function RootLayout() {
   return (

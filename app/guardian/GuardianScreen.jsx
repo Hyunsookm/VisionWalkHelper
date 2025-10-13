@@ -3,78 +3,70 @@
 "use client";
 
 import { useRouter } from "expo-router";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   SafeAreaView,
   View,
   Text,
   TouchableOpacity,
-  Modal,
-  StyleSheet,
-  TextInput,
   Alert,
   ScrollView,
+  Platform,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import Icon from "react-native-vector-icons/Feather";
 import { getAuthInstance, db } from "../../firebase/firebaseConfig";
 import {
-  doc,
-  getDoc,
-  updateDoc,
-  serverTimestamp,
   collection,
   query,
   where,
   getDocs,
+  onSnapshot,
 } from "firebase/firestore";
-
-
+import * as Notifications from "expo-notifications";
 import { styles } from "../styles/guardianStyles";
 
-// --- 1. 헤더 컴포넌트 분리 ---
-// title을 props로 받아 재사용 가능하도록 만듭니다.
-const Header = ({ title }) => {
-  return (
-    <View style={styles.header}>
-      <Text style={styles.headerTitle}>{title}</Text>
-      <TouchableOpacity onPress={() => Alert.alert("알림", "알림 화면으로 이동합니다.")}>
-        <Icon name="bell" size={24} />
-      </TouchableOpacity>
-    </View>
-  );
-};
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    // iOS: 배너/알림센터 노출
+    shouldShowBanner: true,
+    shouldShowList: true,
+    // Android: 여전히 shouldShowAlert 플래그를 참고하므로 true로 유지
+    shouldShowAlert: Platform.OS === "android",
+    // 사운드/배지
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
 
-// --- 2. 사용자 카드 컴포넌트 분리 ---
-// user 정보와 onPress 함수를 props로 받습니다.
-const UserCard = ({ user, onPress }) => {
-  return (
-    <TouchableOpacity style={styles.userCard} onPress={onPress}>
-      <View style={styles.userInfo}>
-        <View style={styles.userAvatar}>
-          <Icon name="user" size={24} color="#fff" />
-        </View>
-        <Text style={styles.userName}>{user.name}</Text>
-      </View>
-      <Icon name="chevron-right" size={20} color="#9ca3af" />
-    </TouchableOpacity>
-  );
-};
+async function ensureAndroidChannel() {
+  if (Platform.OS === "android") {
+    await Notifications.setNotificationChannelAsync("alerts", {
+      name: "Alerts",
+      importance: Notifications.AndroidImportance.HIGH,
+    });
+  }
+}
 
-// --- ✨ 메인 화면 컴포넌트 ---
 export default function GuardianScreen() {
- const router = useRouter();
- const [unlinkTarget, setUnlinkTarget] = useState(null);
- const [showCodeModal, setShowCodeModal] = useState(false);
- const [code, setCode] = useState("");
- const [userName, setUserName] = useState("");
- const [linkedUsers, setLinkedUsers] = useState([]);
+  const router = useRouter();
+  const [linkedUsers, setLinkedUsers] = useState([]);
+  const alertUnsubRef = useRef(null);
+  const isInitialSnapshotRef = useRef(true);
+
+  useEffect(() => {
+    (async () => {
+      await Notifications.requestPermissionsAsync();
+      await ensureAndroidChannel();
+    })();
+  }, []);
 
   useEffect(() => {
     const fetchLinked = async () => {
       try {
         const auth = getAuthInstance();
-        const guardianUid = auth.currentUser.uid;
+        const guardianUid = auth.currentUser?.uid;
+        if (!guardianUid) return;
 
         const q = query(
           collection(db, "peers"),
@@ -95,6 +87,67 @@ export default function GuardianScreen() {
     fetchLinked();
   }, []);
 
+  useEffect(() => {
+    const startAlertsListener = async () => {
+      const auth = getAuthInstance();
+      const guardianUid = auth.currentUser?.uid;
+      if (!guardianUid) return;
+
+      if (alertUnsubRef.current) {
+        alertUnsubRef.current();
+        alertUnsubRef.current = null;
+      }
+      isInitialSnapshotRef.current = true;
+
+      const qAlerts = query(
+        collection(db, "alerts"),
+        where("guardianUids", "array-contains", guardianUid),
+        where("status", "==", "new")
+      );
+
+      alertUnsubRef.current = onSnapshot(
+        qAlerts,
+        async snapshot => {
+          if (isInitialSnapshotRef.current) {
+            isInitialSnapshotRef.current = false;
+            return;
+          }
+          const added = snapshot.docChanges().filter(c => c.type === "added");
+          for (const change of added) {
+            const data = change.doc.data() || {};
+            const title = data.type === "fall" ? "낙상 감지" : "알림";
+            const body = "보호 대상자에게서 이상 신호가 감지되었습니다.";
+
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title,
+                body,
+                data: {
+                  alertId: change.doc.id,
+                  userUid: String(data.userUid || ""),
+                  deviceId: String(data.deviceId || ""),
+                  type: String(data.type || "alert"),
+                  status: String(data.status || ""),
+                },
+              },
+              trigger: null,
+            });
+          }
+        },
+        err => {
+          console.warn("alerts 실시간 구독 에러:", err);
+        }
+      );
+    };
+
+    startAlertsListener();
+    return () => {
+      if (alertUnsubRef.current) {
+        alertUnsubRef.current();
+        alertUnsubRef.current = null;
+      }
+    };
+  }, []);
 
   const handleOpenUser = (u) => {
     router.push({
@@ -104,11 +157,6 @@ export default function GuardianScreen() {
         displayName: u.guardianDisplayName || u.userUid,
       },
     });
-  };
-
-  // 하단 네비게이션 핸들러
-  const handleLocationNav = () => {
-    router.push("/guardian/GuardianScreen");
   };
 
   const handleAccountNav = () => {
@@ -121,8 +169,13 @@ export default function GuardianScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>보호자</Text>
+        <TouchableOpacity onPress={() => Alert.alert("알림", "알림 화면으로 이동합니다.")}>
+          <Icon name="bell" size={24} />
+        </TouchableOpacity>
+      </View>
 
-      {/* Content (스크롤) */}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
         <Text style={styles.sectionTitle}>연동된 사용자</Text>
 
@@ -150,19 +203,9 @@ export default function GuardianScreen() {
             <Feather name="chevron-right" size={20} color="#9ca3af" />
           </TouchableOpacity>
         ))}
-
       </ScrollView>
 
-      {/* Bottom Navigation (고정) */}
       <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={[styles.navItem, styles.activeNavItem]}
-          onPress={handleLocationNav}
-        >
-          <Feather name="shopping-cart" size={24} style={styles.navIcon} />
-          <Text style={styles.navText}>위치 확인</Text>
-        </TouchableOpacity>
-
         <TouchableOpacity style={styles.navItem} onPress={handleAccountNav}>
           <Feather name="user" size={24} style={styles.navIcon} />
           <Text style={styles.navText}>계정</Text>

@@ -76,10 +76,10 @@ useEffect(() => {
     }
   }
 
-  // 10초마다 실행
+  // 30초마다 실행
   interval = setInterval(() => {
     createAutoAlert();
-  }, 10000);
+  }, 30000);
 
   // 화면 사라지면 중지
   return () => clearInterval(interval);
