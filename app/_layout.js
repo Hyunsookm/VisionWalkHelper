@@ -1,4 +1,5 @@
 // app/_layout.js
+// 노인층 친화: 큰 아이콘, 터치 영역 확대
 
 import { Stack } from 'expo-router';
 import { StatusBar, TouchableOpacity, Alert } from 'react-native';
@@ -15,13 +16,28 @@ export default function RootLayout() {
       />
       <Stack
         screenOptions={{
-          headerTitleAlign: 'center', // 헤더 제목을 가운데로 정렬합니다.
+          headerTitleAlign: 'center',
+          headerTitleStyle: {
+            fontSize: 22,
+            fontWeight: '700',
+            color: '#111827',
+          },
+          headerStyle: {
+            height: 72,
+          },
           headerRight: () => (
             <TouchableOpacity
               onPress={() => Alert.alert('알림', '알림 목록을 봅니다.')}
-              style={{ marginRight: 15 }}
+              style={{ 
+                marginRight: 15,
+                padding: 8,
+                minWidth: 48,
+                minHeight: 48,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
             >
-              <Icon name="bell" size={24} color="#000" />
+              <Icon name="bell" size={28} color="#000" />
             </TouchableOpacity>
           ),
         }}
@@ -30,7 +46,13 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="RoleSelectionScreen" options={{ headerShown: false }} />
         <Stack.Screen name="login/LoginScreen" options={{ headerShown: false }} />
-        <Stack.Screen name="login/SignInScreen" options={{ title: '회원가입', headerRight: () => null }} />
+        <Stack.Screen 
+          name="login/SignInScreen" 
+          options={{ 
+            title: '회원가입', 
+            headerRight: () => null 
+          }} 
+        />
 
         {/* --- 보호자 관련 화면 --- */}
         <Stack.Screen name="guardian/GuardianScreen" options={{ title: '위치 확인' }} />
@@ -48,7 +70,6 @@ export default function RootLayout() {
         
         {/* 동적 경로 화면 (예: 기기 상세 정보) */}
         <Stack.Screen name="user/[deviceId]/index" options={{ title: '기기 상세 설정' }} />
-        
       </Stack>
     </SafeAreaProvider>
   );
