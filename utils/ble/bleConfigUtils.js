@@ -194,3 +194,73 @@ export function readBatteryByte(device, setBatteryLevel) {
     }
   );
 }
+
+/**
+ * 낙상 감지 이벤트를 실시간으로 구독 (notify 방식)
+ * @param {Device} device - BLE 디바이스 객체
+ * @param {Object} auth - Firebase Auth 인스턴스
+ * @param {Object} db - Firestore DB 인스턴스
+ * @param {Object} options - 추가 옵션
+ * @param {Function} options.guardianUidsResolver - Guardian UIDs를 가져오는 함수
+ * @returns {Subscription} 구독 객체 (subscription.remove()로 해제)
+ */
+export function subscribeToFallDetection(device, auth, db, options = {}) {
+  const FALL_DETECTION_SERVICE_UUID = "87654321-1234-5678-1234-56789abcdef0";
+  const FALL_DETECTION_CHAR_UUID = "abcdef01-1234-5678-1234-56789abcdef6"; // 낙상 감지용 UUID
+
+  const { guardianUidsResolver } = options;
+
+  return device.monitorCharacteristicForService(
+    FALL_DETECTION_SERVICE_UUID,
+    FALL_DETECTION_CHAR_UUID,
+    async (error, characteristic) => {
+      if (error) {
+        console.error("❌ 낙상 감지 구독 오류:", error.message);
+        return;
+      }
+
+      if (!characteristic?.value) {
+        console.warn("⚠️ 낙상 감지 characteristic 값 없음");
+        return;
+      }
+
+      try {
+        const binary = atob(characteristic.value);
+        const fallDetected = binary.charCodeAt(0);
+
+        // 낙상 감지 (예: 1이면 낙상)
+        if (fallDetected === 1) {
+          console.log("🚨 낙상 감지됨!");
+
+          // Firebase에 Alert 생성
+          const userUid = auth.currentUser?.uid;
+          if (!userUid) {
+            console.warn("⚠️ 사용자 인증 정보 없음");
+            return;
+          }
+
+          let guardianUids = [];
+          if (guardianUidsResolver) {
+            guardianUids = await guardianUidsResolver(userUid);
+          }
+
+          const { addDoc, collection, serverTimestamp } = await import("firebase/firestore");
+          
+          await addDoc(collection(db, "alerts"), {
+            userUid,
+            guardianUids,
+            type: "fall",
+            deviceId: device.id,
+            createdAt: serverTimestamp(),
+            status: "new",
+            extra: { autoDetected: true }
+          });
+
+          console.log("✅ 낙상 감지 alert 생성 완료");
+        }
+      } catch (decodeErr) {
+        console.error("❌ 낙상 감지 값 디코딩 실패:", decodeErr);
+      }
+    }
+  );
+}

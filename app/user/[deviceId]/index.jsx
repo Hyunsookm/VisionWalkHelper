@@ -31,7 +31,7 @@ export default function DeviceDetailScreen() {
   const [isAlarmOn, setIsAlarmOn] = useState(false);           // ← 추가
   const [volumeLevel, setVolumeLevel] = useState(0);
   const [batteryLevel, setBatteryLevel] = useState(null);
-
+  const auth = getAuthInstance();
   async function resolveGuardianUids(userUid) {
     try {
       const q = query(
@@ -56,30 +56,30 @@ useEffect(() => {
   const auth = getAuthInstance();
   let interval;
 
-  async function createAutoAlert() {
-    try {
-      const userUid = auth.currentUser?.uid;
-      if (!userUid) return;
-      const guardians = await resolveGuardianUids(userUid);
-      await addDoc(collection(db, "alerts"), {
-        userUid,
-        guardianUids: guardians,
-        type: "fall",
-        deviceId: device?.id || "debug",
-        createdAt: serverTimestamp(),
-        status: "new",
-        extra: { autoTest: true }
-      });
-      console.log("✅ 테스트 alert 문서 생성 완료");
-    } catch (e) {
-      console.warn("자동 테스트 alert 생성 실패:", e);
-    }
-  }
+  // async function createAutoAlert() {
+  //   try {
+  //     const userUid = auth.currentUser?.uid;
+  //     if (!userUid) return;
+  //     const guardians = await resolveGuardianUids(userUid);
+  //     await addDoc(collection(db, "alerts"), {
+  //       userUid,
+  //       guardianUids: guardians,
+  //       type: "fall",
+  //       deviceId: device?.id || "debug",
+  //       createdAt: serverTimestamp(),
+  //       status: "new",
+  //       extra: { autoTest: true }
+  //     });
+  //     console.log("✅ 테스트 alert 문서 생성 완료");
+  //   } catch (e) {
+  //     console.warn("자동 테스트 alert 생성 실패:", e);
+  //   }
+  // }
 
-  // 30초마다 실행
-  interval = setInterval(() => {
-    createAutoAlert();
-  }, 30000);
+  // // 30초마다 실행
+  // interval = setInterval(() => {
+  //   createAutoAlert();
+  // }, 30000);
 
   // 화면 사라지면 중지
   return () => clearInterval(interval);
