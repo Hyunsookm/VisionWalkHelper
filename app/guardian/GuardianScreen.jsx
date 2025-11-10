@@ -202,7 +202,7 @@ export default function GuardianScreen() {
 
             <View style={styles.bottomNav}>
               <TouchableOpacity
-                style={styles.navItem}
+                style={[styles.navItem, styles.activeNavItem ]}
                 onPress={() => router.push("/guardian/GuardianScreen")}
               >
                 <Icon name="shopping-cart" size={24} style={styles.navIcon} />
@@ -218,7 +218,7 @@ export default function GuardianScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.navItem, styles.activeNavItem]}
+                style={styles.navItem}
                 onPress={() => router.push("/guardian/GuardianSettingsScreen")}
               >
                 <Icon name="settings" size={24} style={styles.navIcon} />

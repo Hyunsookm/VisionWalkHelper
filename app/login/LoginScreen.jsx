@@ -232,7 +232,7 @@ export default function LoginScreen() {
               }
             </TouchableOpacity>
 
-            <Text style={styles.orText}>Or connect with social media</Text>
+            <Text style={styles.orText}>소셜 계정으로 로그인하기</Text>
 
             <TouchableOpacity
               style={styles.kakaoButton}
@@ -247,11 +247,9 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.linkContainer}>
+            <Text style={styles.orText}>아직 계정이 없으신가요? </Text>
             <TouchableOpacity onPress={handleSignup}>
               <Text style={styles.linkText}>회원가입</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handlePasswordReset}>
-              <Text style={styles.linkText}>비밀번호 재설정</Text>
             </TouchableOpacity>
           </View>
         </View>

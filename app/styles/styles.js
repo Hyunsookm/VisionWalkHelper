@@ -80,18 +80,21 @@ const styles = StyleSheet.create({
   loginButton: {
     backgroundColor: "#22c55e",
     paddingVertical: 18, // 14 → 18
+    borderRadius: 8,
+    alignItems: "center",
   },
   loginButtonText: {
-    color: "#fff",
-    fontSize: 16,
+    color: "#000",
+    fontSize: 20,
     fontWeight: "600",
+    alignItems: 'center'
   },
   orText: {
     marginTop: 16,
     marginBottom: 8,
     textAlign: "center",
     color: "#999",
-    fontSize: 14,
+    fontSize: 15,
   },
   kakaoButton: {
     backgroundColor: "#FEE500",
@@ -100,19 +103,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   kakaoButtonText: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: "600",
     color: "#000",
   },
   linkContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
     marginTop: 16,
     paddingHorizontal: 8,
+    marginLeft: 60
   },
   linkText: {
     color: "#3b82f6",
-    fontSize: 14,
+    marginTop: 14,
+    marginBottom: 8,
+    fontSize: 18,
   },
   bottomIndicator: {
     alignItems: "center",
