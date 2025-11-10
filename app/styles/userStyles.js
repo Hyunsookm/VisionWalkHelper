@@ -17,6 +17,7 @@ export const COLORS = {
   info: "#3b82f6",
   muted: "#f3f4f6",
   overlay: "rgba(0,0,0,0.6)", // 0.5 → 0.6
+  warning: "#7ca0daff"
 };
 
 export const styles = StyleSheet.create({
@@ -208,7 +209,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 10, // 6 → 10
     paddingHorizontal: 16, // 12 → 16
     borderRadius: 8, // 6 → 8
-    minHeight: 44,
+    minHeight: 44
   },
   smallButtonText: { 
     color: COLORS.white, 
@@ -280,7 +281,6 @@ export const styles = StyleSheet.create({
 
   volumeControls: { 
     flexDirection: "row", 
-    gap: 12 // 8 → 12
   },
   volumeButton: {
     backgroundColor: COLORS.info,
@@ -288,8 +288,13 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 16, // 12 → 16
     borderRadius: 8,
     minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 6
   },
-
+  decreaseButton: {
+    backgroundColor: COLORS.warning
+  },
   // ───────────────────────── Bottom Navigation ─────────────────────────
   bottomNav: {
     flexDirection: "row",

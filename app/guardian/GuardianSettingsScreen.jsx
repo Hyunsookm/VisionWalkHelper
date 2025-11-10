@@ -76,7 +76,7 @@ export default function GuardianSettingsScreen() {
 
         {/* 더보기 모달 열기 */}
         <TouchableOpacity style={styles.row} onPress={() => setShowMoreInfo(true)}>
-          <Text style={styles.rowText}>더보기</Text>
+          <Text style={styles.rowText}>애플리케이션 정보</Text>
           <Feather name="chevron-right" size={20} color="#000" />
         </TouchableOpacity>
       </View>

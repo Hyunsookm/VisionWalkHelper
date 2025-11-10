@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useRouter } from "expo-router";
+import { useRouter, Stack } from "expo-router";
 import React, { useState, useEffect, useRef } from "react";
 import {
   SafeAreaView,
@@ -47,6 +47,7 @@ async function ensureAndroidChannel() {
     });
   }
 }
+
 
 export default function GuardianScreen() {
   const router = useRouter();
@@ -169,12 +170,6 @@ export default function GuardianScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>보호자</Text>
-        <TouchableOpacity onPress={() => Alert.alert("알림", "알림 화면으로 이동합니다.")}>
-          <Icon name="bell" size={24} />
-        </TouchableOpacity>
-      </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
         <Text style={styles.sectionTitle}>연동된 사용자</Text>
@@ -205,17 +200,32 @@ export default function GuardianScreen() {
         ))}
       </ScrollView>
 
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem} onPress={handleAccountNav}>
-          <Feather name="user" size={24} style={styles.navIcon} />
-          <Text style={styles.navText}>계정</Text>
-        </TouchableOpacity>
+            <View style={styles.bottomNav}>
+              <TouchableOpacity
+                style={styles.navItem}
+                onPress={() => router.push("/guardian/GuardianScreen")}
+              >
+                <Icon name="shopping-cart" size={24} style={styles.navIcon} />
+                <Text style={styles.navText}>위치 확인</Text>
+              </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navItem} onPress={handleSettingsNav}>
-          <Feather name="settings" size={24} style={styles.navIcon} />
-          <Text style={styles.navText}>설정</Text>
-        </TouchableOpacity>
-      </View>
+              <TouchableOpacity
+                style={styles.navItem}
+                onPress={() => router.push("/guardian/AccountLinkScreen")}
+              >
+                <Icon name="user" size={24} style={styles.navIcon} />
+                <Text style={styles.navText}>계정</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.navItem, styles.activeNavItem]}
+                onPress={() => router.push("/guardian/GuardianSettingsScreen")}
+              >
+                <Icon name="settings" size={24} style={styles.navIcon} />
+                <Text style={styles.navText}>설정</Text>
+              </TouchableOpacity>
+            </View>
     </SafeAreaView>
   );
 }
+

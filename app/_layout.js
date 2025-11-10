@@ -68,13 +68,13 @@ export default function RootLayout() {
         />
 
         {/* --- 보호자 관련 화면 --- */}
-        <Stack.Screen name="guardian/GuardianScreen" options={{ title: '위치 확인' }} />
+        <Stack.Screen name="guardian/GuardianScreen" options={{ title: '사용자 위치 확인' }} />
         <Stack.Screen name="guardian/AccountLinkScreen" options={{ title: '연동 관리' }} />
         <Stack.Screen name="guardian/GuardianSettingsScreen" options={{ title: '설정' }} />
 
         {/* --- 지도 관련 화면 --- */}
-        <Stack.Screen name="map/MapGuardian" options={{ title: '위치 확인 (보호자)' }} />
-        <Stack.Screen name="map/MapUser" options={{ title: '위치 확인 (사용자)' }} />
+        <Stack.Screen name="map/MapGuardian" options={{ title: '사용자 위치 확인' }} />
+        <Stack.Screen name="map/MapUser" options={{ title: '내 카트 위치 확인' }} />
 
         {/* --- 사용자 관련 화면 --- */}
         <Stack.Screen name="user/DeviceSettingsScreen" options={{ title: '기기 설정' }} />

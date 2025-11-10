@@ -17,21 +17,22 @@ import {
 } from "../../../utils/ble/bleConfigUtils";
 import { getAuthInstance, db } from "../../../firebase/firebaseConfig";
 import { addDoc, collection, serverTimestamp, query, where, getDocs } from "firebase/firestore";
-
+import { locationUpdater } from "../../../locationupdater";
 import { styles } from "../../styles/userStyles";
 
 export default function DeviceDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const deviceId = params.deviceId; // { deviceId: "1234-..." }
+  const deviceId = params.deviceId;
 
   const [device, setDevice] = useState(null);
   const [isLightOn, setIsLightOn] = useState(false);
   const [alarmByte, setAlarmByte] = useState(0);
-  const [isAlarmOn, setIsAlarmOn] = useState(false);           // ← 추가
+  const [isAlarmOn, setIsAlarmOn] = useState(false);
   const [volumeLevel, setVolumeLevel] = useState(0);
   const [batteryLevel, setBatteryLevel] = useState(null);
   const auth = getAuthInstance();
+
   async function resolveGuardianUids(userUid) {
     try {
       const q = query(
@@ -52,41 +53,6 @@ export default function DeviceDetailScreen() {
     }
   }
 
-useEffect(() => {
-  const auth = getAuthInstance();
-  let interval;
-
-  // async function createAutoAlert() {
-  //   try {
-  //     const userUid = auth.currentUser?.uid;
-  //     if (!userUid) return;
-  //     const guardians = await resolveGuardianUids(userUid);
-  //     await addDoc(collection(db, "alerts"), {
-  //       userUid,
-  //       guardianUids: guardians,
-  //       type: "fall",
-  //       deviceId: device?.id || "debug",
-  //       createdAt: serverTimestamp(),
-  //       status: "new",
-  //       extra: { autoTest: true }
-  //     });
-  //     console.log("✅ 테스트 alert 문서 생성 완료");
-  //   } catch (e) {
-  //     console.warn("자동 테스트 alert 생성 실패:", e);
-  //   }
-  // }
-
-  // // 30초마다 실행
-  // interval = setInterval(() => {
-  //   createAutoAlert();
-  // }, 30000);
-
-  // 화면 사라지면 중지
-  return () => clearInterval(interval);
-}, [device]);
-
-
-
   useEffect(() => {
     if (!deviceId) {
       Alert.alert("오류", "deviceId가 없습니다.");
@@ -104,25 +70,53 @@ useEffect(() => {
       .catch((e) => Alert.alert("디바이스 로드 실패", e.message));
   }, [deviceId]);
 
+  // BLE 연결 상태에 따라 위치업데이트 시작/중지
+  useEffect(() => {
+    const onConnected = (evt) => {
+      if (deviceId && evt?.deviceId && evt.deviceId !== deviceId) return;
+      locationUpdater.setSendAllowed(true);
+      locationUpdater.start({ immediate: true }).catch((e) => {
+        console.warn("location start error:", e);
+      });
+    };
+
+    const onDisconnected = (evt) => {
+      if (deviceId && evt?.deviceId && evt.deviceId !== deviceId) return;
+      locationUpdater.setSendAllowed(false);
+      locationUpdater.stop().catch(() => {});
+    };
+
+    const subConn = bleManager.on?.("connected", onConnected);
+    const subDisc = bleManager.on?.("disconnected", onDisconnected);
+
+    try {
+      if (bleManager.isConnected?.(deviceId)) {
+        onConnected({ deviceId });
+      }
+    } catch {}
+
+    return () => {
+      subConn?.remove?.();
+      subDisc?.remove?.();
+      locationUpdater.setSendAllowed(false);
+      locationUpdater.stop().catch(() => {});
+    };
+  }, [deviceId]);
+
   useEffect(() => {
     if (!device) return;
 
-    // 1. 배터리 레벨 구독 시작
     const batterySubscription = readBatteryByte(device, setBatteryLevel);
-
-    // 2. 낙상 감지 구독 시작
     const fallSubscription = subscribeToFallDetection(device, auth, db, {
-      guardianUidsResolver: resolveGuardianUids, // 위 함수 그대로 전달
+      guardianUidsResolver: resolveGuardianUids,
     });
 
-    // 3. 화면이 사라질 때 모든 구독을 정리(clean-up)
     return () => {
       batterySubscription?.remove?.();
       fallSubscription?.remove?.();
     };
-  }, [device]); // device가 연결되면 구독 시작
+  }, [device]);
 
-  // 라이트 토글
   const toggleLight = async (newVal) => {
     setIsLightOn(newVal);
     if (!device) return;
@@ -133,7 +127,6 @@ useEffect(() => {
     }
   };
 
-  // 알람 ON/OFF 토글
   const toggleAlarm = async (newVal) => {
     setIsAlarmOn(newVal);
     if (!device) return;
@@ -146,7 +139,6 @@ useEffect(() => {
     }
   };
 
-  // 볼륨 조절
   const onChangeVolume = async (delta) => {
     if (!device) return;
     try {
@@ -167,11 +159,10 @@ useEffect(() => {
             <Text style={styles.settingSubtitle}>
               {device ? "연결됨" : "연결 대기 중"}
             </Text>
-            <Icon name="bluetooth" size={20} color={device ? "#3b82f6" : "#ccc"} />
+            <Icon name="bluetooth" size={20} style={{ marginLeft: 105 }} color={device ? "#3b82f6" : "#ccc"} />
           </View>
         </View>
 
-        {/* 배터리 레벨 표시 */}
         <View style={styles.settingItem}>
           <Text style={styles.settingTitle}>배터리 레벨</Text>
           <Text style={styles.settingSubtitle}>
@@ -179,7 +170,6 @@ useEffect(() => {
           </Text>
         </View>
 
-        {/* 전조등 토글 */}
         <View style={styles.settingItem}>
           <Text style={styles.settingTitle}>전조등</Text>
           <Switch
@@ -190,9 +180,8 @@ useEffect(() => {
           />
         </View>
 
-        {/* 알람 ON/OFF 토글 */}
         <View style={styles.settingItem}>
-          <Text style={styles.settingTitle}>알람(Byte: {alarmByte})</Text>
+          <Text style={styles.settingTitle}>알람</Text>
           <Switch
             value={isAlarmOn}
             onValueChange={toggleAlarm}
@@ -201,21 +190,22 @@ useEffect(() => {
           />
         </View>
 
-        {/* 볼륨 조절 버튼 */}
         <View style={styles.settingItem}>
           <View style={styles.settingLeft}>
-            <Text style={styles.settingTitle}>볼륨(Byte: {volumeLevel})</Text>
+            <Text style={styles.settingTitle}>볼륨</Text>
+            <Text style= {styles.settingSubtitle}>           볼륨값: {volumeLevel}</Text>
           </View>
           <View style={styles.volumeControls}>
             <TouchableOpacity
-              style={styles.volumeButton}
+              style={[styles.volumeButton, styles.decreaseButton]}
               onPress={() => onChangeVolume(-10)}
             >
               <Text style={styles.smallButtonText}>-10</Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.volumeButton}
-              onPress={() => onChangeVolume(10)}
+              onPress={() => onChangeVolume(+10)}
             >
               <Text style={styles.smallButtonText}>+10</Text>
             </TouchableOpacity>
@@ -251,3 +241,5 @@ useEffect(() => {
     </SafeAreaView>
   );
 }
+
+const localStyles = StyleSheet.create({});
