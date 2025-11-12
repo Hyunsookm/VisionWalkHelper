@@ -1,22 +1,29 @@
+// ============================================================
+// 2. app/user/DeviceSettingsScreen.jsx (수정)
+// ============================================================
+
 import { useRouter } from "expo-router";
 import {
   Alert,
   PermissionsAndroid,
   Platform,
   SafeAreaView,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  ActivityIndicator
+  ActivityIndicator,
+  Modal,
+  TextInput,
 } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 import { checkBLEStatus } from "../../utils/ble/checkStatus";
-import { startDeviceScanAndConnect } from "../../utils/ble/startDeviceScanAndConnect";
+import { 
+  startDeviceScanAndConnect, 
+  reconnectWithSavedSerial 
+} from "../../utils/ble/startDeviceScanAndConnect";
 import bleManager from "../../utils/ble/bleManager";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useCallback, useState } from "react";
-
 import { styles } from "../styles/userStyles";
 
 const requestBLEPermissions = async () => {
@@ -45,26 +52,44 @@ export default function DeviceSettingsScreen() {
   const [loading, setLoading] = useState(false);
   const [connectedDeviceId, setConnectedDeviceId] = useState(null);
   const [initializing, setInitializing] = useState(true);
+  
+  // 시리얼 번호 입력 모달 관련 상태
+  const [showSerialModal, setShowSerialModal] = useState(false);
+  const [serialNumber, setSerialNumber] = useState("");
 
+  // 재연결 관련 상태
+  const [reconnecting, setReconnecting] = useState(false);
+  const [reconnectFailed, setReconnectFailed] = useState(false);
+  const [reconnectError, setReconnectError] = useState("");
+
+  // 자동 재연결 시도
   const checkAlreadyConnected = useCallback(async () => {
     try {
       await requestBLEPermissions();
       await checkBLEStatus();
 
-      const savedId = await AsyncStorage.getItem("lastConnectedDeviceId");
-      if (!savedId || savedId.length < 5) return;
+      setReconnecting(true);
+      setReconnectFailed(false);
 
-      try {
-        const device = await bleManager.connectToDevice(savedId);
-        await device.discoverAllServicesAndCharacteristics();
-        console.log("✅ 저장된 MAC으로 재연결 성공:", device.id);
-        setConnectedDeviceId(device.id);
-      } catch (connectErr) {
-        console.warn("❌ 저장된 MAC으로 재연결 실패, 제거 중");
-        await AsyncStorage.removeItem("lastConnectedDeviceId");
-      }
+      reconnectWithSavedSerial(
+        (connectedDevice) => {
+          console.log('✅ 자동 재연결 성공:', connectedDevice.id);
+          setConnectedDeviceId(connectedDevice.id);
+          setReconnecting(false);
+          setReconnectFailed(false);
+        },
+        (error) => {
+          console.warn('⚠️ 자동 재연결 실패:', error);
+          setReconnecting(false);
+          setReconnectFailed(true);
+          setReconnectError(error);
+        }
+      );
     } catch (err) {
       console.error("연결 확인 실패:", err.message);
+      setReconnecting(false);
+      setReconnectFailed(true);
+      setReconnectError(err.message);
     }
   }, []);
 
@@ -74,29 +99,55 @@ export default function DeviceSettingsScreen() {
     return () => clearTimeout(timer);
   }, [checkAlreadyConnected]);
 
+  // 재연결 재시도
+  const handleRetryReconnect = () => {
+    setReconnectFailed(false);
+    checkAlreadyConnected();
+  };
+
+  // 저장된 정보 삭제하고 새로 연결
+  const handleNewConnection = async () => {
+    await AsyncStorage.removeItem("lastConnectedDeviceId");
+    await AsyncStorage.removeItem("deviceSerialNumber");
+    setReconnectFailed(false);
+    setShowSerialModal(true);
+  };
+
+  // 시리얼 번호 입력 후 BLE 연결
   const handleBLEConnect = async () => {
+    if (!serialNumber.trim()) {
+      Alert.alert("입력 오류", "시리얼 번호를 입력해주세요.");
+      return;
+    }
+
+    setShowSerialModal(false);
     setLoading(true);
+
     try {
       await requestBLEPermissions();
       await checkBLEStatus();
 
-      const scanTimeout = setTimeout(() => {
-        setLoading(false);
-      }, 10000);
-
-      startDeviceScanAndConnect(async (connectedDevice) => {
-        clearTimeout(scanTimeout);
-        setLoading(false);
-        await AsyncStorage.setItem("lastConnectedDeviceId", connectedDevice.id);
-        setConnectedDeviceId(connectedDevice.id);
-        router.push(`/user/${connectedDevice.id}`);
-      });
+      startDeviceScanAndConnect(
+        serialNumber.trim(),
+        (connectedDevice) => {
+          setLoading(false);
+          setConnectedDeviceId(connectedDevice.id);
+          setSerialNumber("");
+          Alert.alert("연결 성공", "기기와 성공적으로 연결되었습니다.");
+          router.push(`/user/${connectedDevice.id}`);
+        },
+        (error) => {
+          setLoading(false);
+          Alert.alert("연결 실패", error);
+        }
+      );
     } catch (err) {
       setLoading(false);
       Alert.alert("BLE 연결 실패", err.message);
     }
   };
 
+  // 연결 해제
   const handleBLEDisconnect = async () => {
     try {
       if (connectedDeviceId) {
@@ -107,6 +158,7 @@ export default function DeviceSettingsScreen() {
       console.warn("BLE 연결 해제 중 오류:", err.message);
     } finally {
       await AsyncStorage.removeItem("lastConnectedDeviceId");
+      await AsyncStorage.removeItem("deviceSerialNumber");
       setConnectedDeviceId(null);
       Alert.alert("연결 해제", "기기와의 연결이 해제되었습니다.");
     }
@@ -114,31 +166,56 @@ export default function DeviceSettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-
       <View style={styles.content}>
-          {/* 1. connectedDeviceId가 없을 때만 "연동된 기기 없음" 메시지를 표시합니다. */}
-          {!connectedDeviceId && (
-            <View style={styles.messageContainer}>
-              <Text style={styles.messageText}>
-                아직 연동된 기기가{`\n`}없습니다~
-              </Text>
-            </View>
-          )}
+        {!connectedDeviceId && !reconnecting && (
+          <View style={styles.messageContainer}>
+            <Text style={styles.messageText}>
+              아직 연동된 기기가 없습니다~
+            </Text>
+          </View>
+        )}
 
         {initializing || loading ? (
-          <ActivityIndicator size="large" color="#22c55e" />
+          <>
+            <ActivityIndicator size="large" color="#22c55e" />
+            <Text style={{ marginTop: 16, textAlign: 'center', fontSize: 16 }}>
+              {loading ? "기기를 검색하고 있습니다..." : "초기화 중..."}
+            </Text>
+          </>
         ) : (
           <>
+            {/* 재연결 중일 때 상태 표시 */}
+            {reconnecting && (
+              <View style={{ alignItems: 'center', marginBottom: 20 }}>
+                <ActivityIndicator size="large" color="#22c55e" />
+                <Text style={{ marginTop: 16, textAlign: 'center', fontSize: 18, fontWeight: '600' }}>
+                  기기 재연결 중...
+                </Text>
+                <Text style={{ marginTop: 8, textAlign: 'center', fontSize: 14, color: '#6b7280' }}>
+                  저장된 기기와 연결을 시도하고 있습니다
+                </Text>
+              </View>
+            )}
+
             <TouchableOpacity
-              style={styles.connectButton}
+              style={[
+                styles.connectButton,
+                (reconnecting || loading) && styles.disabledButton
+              ]}
               onPress={
                 connectedDeviceId
                   ? () => router.push(`/user/${connectedDeviceId}`)
-                  : handleBLEConnect
+                  : () => setShowSerialModal(true)
               }
+              disabled={reconnecting || loading}
             >
               <Text style={styles.connectButtonText}>
-                {connectedDeviceId ? "기기 상세 보기" : "카트 연결 버튼"}
+                {connectedDeviceId 
+                  ? "기기 상세 보기" 
+                  : reconnecting 
+                    ? "재연결 중..." 
+                    : "카트 연결 버튼"
+                }
               </Text>
             </TouchableOpacity>
 
@@ -154,6 +231,96 @@ export default function DeviceSettingsScreen() {
         )}
       </View>
 
+      {/* 🔽 재연결 실패 모달 */}
+      <Modal
+        visible={reconnectFailed}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setReconnectFailed(false)}
+      >
+        <View style={styles.backdrop}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>재연결 실패</Text>
+            <Text style={styles.modalText}>
+              저장된 기기와의 연결에 실패했습니다.
+            </Text>
+            {reconnectError ? (
+              <Text
+                style={{
+                  marginTop: 8,
+                  color: '#dc2626',
+                  textAlign: 'center',
+                  fontSize: 13,
+                }}
+              >
+                {reconnectError}
+              </Text>
+            ) : null}
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setReconnectFailed(false)}
+              >
+                <Text style={styles.confirmBtnText}>닫기</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.confirmBtn}
+                onPress={handleRetryReconnect}
+              >
+                <Text style={styles.confirmBtnText}>다시 연결</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      {/* 시리얼 번호 입력 모달 */}
+      <Modal
+        visible={showSerialModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSerialModal(false)}
+      >
+        <View style={styles.backdrop}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>시리얼 번호 입력</Text>
+            <Text style={styles.modalText}>
+              카트에 부착된 시리얼 번호를 입력하세요
+            </Text>
+            
+            <TextInput
+              style={styles.codeInput}
+              placeholder="예: HJB1234"
+              value={serialNumber}
+              onChangeText={setSerialNumber}
+              autoCapitalize="characters"
+              autoCorrect={false}
+            />
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => {
+                  setShowSerialModal(false);
+                  setSerialNumber("");
+                }}
+              >
+                <Text style={styles.confirmBtnText}>취소</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.confirmBtn} 
+                onPress={handleBLEConnect}
+              >
+                <Text style={styles.confirmBtnText}>연결</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 하단 네비게이션 */}
       <View style={styles.bottomNav}>
         <TouchableOpacity
           style={[styles.navItem, styles.activeNavItem]}
@@ -182,4 +349,3 @@ export default function DeviceSettingsScreen() {
     </SafeAreaView>
   );
 }
-
