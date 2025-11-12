@@ -58,16 +58,6 @@ export default function DeviceDetailScreen() {
       Alert.alert("오류", "deviceId가 없습니다.");
       return;
     }
-    bleManager
-      .devices([deviceId])
-      .then((arr) => {
-        if (arr.length > 0) {
-          setDevice(arr[0]);
-        } else {
-          throw new Error("디바이스를 찾을 수 없습니다.");
-        }
-      })
-      .catch((e) => Alert.alert("디바이스 로드 실패", e.message));
   }, [deviceId]);
 
   // BLE 연결 상태에 따라 위치업데이트 시작/중지

@@ -189,7 +189,14 @@ export const styles = StyleSheet.create({
     fontSize: 20, // 18 → 20
     fontWeight: "700" // 500 → 700
   },
-
+  modalCancelBtn: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 10,
+    alignItems: "center",
+    backgroundColor: "#6b7280",
+    minHeight: 52,
+  },
   dangerButton: {
     backgroundColor: COLORS.danger,
     borderRadius: 12,
@@ -472,6 +479,14 @@ export const styles = StyleSheet.create({
     color: COLORS.white, 
     textAlign: "center" 
   },
+  modalCancelBtn: {
+    flex: 1,
+    paddingVertical: 16, // 12 → 16
+    borderRadius: 10, // 6 → 10
+    alignItems: "center",
+    backgroundColor: COLORS.danger,
+    minHeight: 52,
+  },
   cancelBtn: {
     flex: 1,
     paddingVertical: 16,
@@ -491,6 +506,7 @@ export const styles = StyleSheet.create({
     alignSelf: "center",
     minHeight: 56,
   },
+  
 });
 
 export default styles;
