@@ -76,6 +76,8 @@ export default function MapScreen() {
   return (
     <View style={{ flex: 1 }}>
       <NaverMapView
+        showsMyLocationButton={true}
+        showsUserLocation={true}
         ref={mapRef}
         style={{ flex: 1 }}
         center={initialCenter}

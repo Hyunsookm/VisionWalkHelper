@@ -1,5 +1,3 @@
-// RoleSelectionScreen.js
-
 import { useRouter } from "expo-router";
 import {
   SafeAreaView,
