@@ -76,13 +76,18 @@ export default function MapScreen() {
   return (
     <View style={{ flex: 1 }}>
       <NaverMapView
-        showsMyLocationButton={true}
-        showsUserLocation={true}
         ref={mapRef}
         style={{ flex: 1 }}
+        // 기존 center, showsMyLocationButton, showsUserLocation 지우고 ↓ 추가
         center={initialCenter}
-        showsMyLocationButton={true}
-        showsUserLocation={true}
+        isShowLocationButton={true}
+        locationOverlay={{
+          isVisible: true,
+          // 원하면 현재 위치로 고정해서 표시
+          position: location
+            ? { latitude: location.lat, longitude: location.lng }
+            : undefined,
+        }}
       />
 
       <View

@@ -153,7 +153,8 @@ export default function UserSettingScreen() {
             </View>
             <View style={styles.modalBody}>
               <Text style={styles.modalTitle}>애플리케이션 정보</Text>
-              <Image style={styles.modalImage} />
+              <Image style={styles.modalImage} 
+                source={require('../../assets/images/icon.png')}/>
               <Text style={styles.modalText}>
                 이 애플리케이션은 낙상 감지 기능을 통해 사용자의 안전을 모니터링합니다.
                 보호자와 연동하여 실시간으로 위치와 상태를 공유할 수 있습니다.

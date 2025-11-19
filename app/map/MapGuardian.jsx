@@ -96,7 +96,14 @@ export default function MapGuardian() {
 
   return (
     <View style={{ flex: 1 }}>
-      <NaverMapView style={{ flex: 1 }} camera={camera}>
+      <NaverMapView
+          style={{ flex: 1 }}
+          camera={camera}
+          isShowLocationButton={true}
+          locationOverlay={{
+            isVisible: true,
+          }}
+        >
         {targetLoc && (
           <NaverMapMarkerOverlay
             latitude={targetLoc.latitude}

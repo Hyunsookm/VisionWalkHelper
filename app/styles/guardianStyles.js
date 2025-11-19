@@ -194,6 +194,11 @@ export const styles = StyleSheet.create({
     lineHeight: 26,
     color: '#374151',
   },
+  modalImage: { 
+    width: 120, // 100 → 120
+    height: 120, 
+    marginBottom: 16, // 12 → 16
+  },
   modalText: {
     fontSize: 17, // 14 → 17
     color: '#374151', // #4B5563 → #374151 (더 진하게)

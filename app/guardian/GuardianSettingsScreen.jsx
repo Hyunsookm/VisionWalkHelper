@@ -5,6 +5,7 @@ import {
   Text,
   TouchableOpacity,
   Modal,
+  Image,
   StyleSheet,
   Alert,
 } from "react-native";
@@ -124,6 +125,8 @@ export default function GuardianSettingsScreen() {
             </View>
             <View style={styles.modalBody}>
               <Text style={styles.modalTitle}>애플리케이션 정보</Text>
+              <Image style={styles.modalImage} 
+                source={require('../../assets/images/icon.png')}/>
               <Text style={styles.modalText}>
                 이 애플리케이션은 낙상 감지 기능을 통해 사용자의 안전을 모니터링합니다. 보호자는 사용자의 위치를 확인하고 낙상 알림을 받을 수 있습니다.
               </Text>
