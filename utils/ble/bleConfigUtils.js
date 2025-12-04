@@ -96,13 +96,11 @@ export async function writeVolumeByte(device, byteValue) {
 }
 
 //
-// 4) “한 바이트”를 Base64 디코딩 → 정수로 변환하여 반환
+// 4) “한 바이트”를 Base64 디코딩 → 정수로 변환하여 반환 (로그 추가됨)
 //
 
 /**
  * atob(polyfill) 확인
- * React Native 환경에서 atob이 정의되어 있지 않다면,
- * 아래와 같이 간단히 폴리필을 추가하세요.
  */
 if (typeof atob === "undefined") {
   global.atob = (base64) => Buffer.from(base64, "base64").toString("binary");
@@ -110,65 +108,82 @@ if (typeof atob === "undefined") {
 
 /**
  * 전조등(Light) 현재 상태 읽기 → 0 또는 1
- * @param {Device} device
- * @returns {Promise<number>}
  */
 export async function readLightByte(device) {
+  console.log(`[BLE] Reading Light Byte...`); // 요청 시작 로그
   const char = await device.readCharacteristicForService(
     CONFIG_SVC_UUID,
     LIGHT_CONFIG_CHAR_UUID
   );
   if (!char.value) {
+    console.error("❌ [readLightByte] Characteristic 값이 없습니다.");
     throw new Error("readLightByte: characteristic 값이 없습니다.");
   }
-  // Base64 문자열 → 바이너리 문자열 → 첫 바이트의 charCodeAt(0)
+  
   const binary = atob(char.value);
-  return binary.charCodeAt(0);
+  const value = binary.charCodeAt(0);
+
+  // ✅ [LOG] 원본 Base64와 디코딩된 정수값 출력
+  console.log(`✅ [readLightByte] Raw(Base64): "${char.value}" ➜ Decoded: ${value}`);
+  
+  return value;
 }
 
 /**
- * 알람(Alarm) 현재 상태 읽기 → 0~255 정수 (예시: 단일 바이트)
- * @param {Device} device
- * @returns {Promise<number>}
+ * 알람(Alarm) 현재 상태 읽기 → 0~255 정수
  */
 export async function readAlarmByte(device) {
+  console.log(`[BLE] Reading Alarm Byte...`);
   const char = await device.readCharacteristicForService(
     CONFIG_SVC_UUID,
     ALARM_CONFIG_CHAR_UUID
   );
   if (!char.value) {
+    console.error("❌ [readAlarmByte] Characteristic 값이 없습니다.");
     throw new Error("readAlarmByte: characteristic 값이 없습니다.");
   }
+
   const binary = atob(char.value);
-  return binary.charCodeAt(0);
+  const value = binary.charCodeAt(0);
+
+  // ✅ [LOG]
+  console.log(`✅ [readAlarmByte] Raw(Base64): "${char.value}" ➜ Decoded: ${value}`);
+
+  return value;
 }
 
 /**
  * 볼륨(Volume) 현재 상태 읽기 → 0~255 정수
- * @param {Device} device
- * @returns {Promise<number>}
  */
 export async function readVolumeByte(device) {
+  console.log(`[BLE] Reading Volume Byte...`);
   const char = await device.readCharacteristicForService(
     CONFIG_SVC_UUID,
     VOLUME_CONFIG_CHAR_UUID
   );
   if (!char.value) {
+    console.error("❌ [readVolumeByte] Characteristic 값이 없습니다.");
     throw new Error("readVolumeByte: characteristic 값이 없습니다.");
   }
+
   const binary = atob(char.value);
-  return binary.charCodeAt(0);
+  const value = binary.charCodeAt(0);
+
+  // ✅ [LOG]
+  console.log(`✅ [readVolumeByte] Raw(Base64): "${char.value}" ➜ Decoded: ${value}`);
+
+  return value;
 }
 
 /**
  * 배터리 레벨을 실시간으로 구독 (notify 방식)
- * @param {Device} device
- * @param {(level: number) => void} setBatteryLevel - 배터리 레벨 수신 콜백
- * @returns {Subscription} 구독 객체 (subscription.remove()로 해제)
+ * - 데이터가 들어올 때마다 로그를 출력하도록 수정
  */
 export function readBatteryByte(device, setBatteryLevel) {
-  const BATTERY_SERVICE_UUID = "87654321-1234-5678-1234-56789abcdef0";  // 표준 Battery Service UUID
-  const BATTERY_CHAR_UUID = "2A19";     // 표준 Battery Level Characteristic UUID
+  const BATTERY_SERVICE_UUID = "87654321-1234-5678-1234-56789abcdef0"; 
+  const BATTERY_CHAR_UUID = "2A19"; 
+
+  console.log(`[BLE] Subscribing to Battery Level...`);
 
   return device.monitorCharacteristicForService(
     BATTERY_SERVICE_UUID,
@@ -180,13 +195,17 @@ export function readBatteryByte(device, setBatteryLevel) {
       }
 
       if (!characteristic?.value) {
-        console.warn("⚠️ characteristic 값 없음");
+        console.warn("⚠️ [readBatteryByte] 값 없음");
         return;
       }
 
       try {
         const binary = atob(characteristic.value);
         const level = binary.charCodeAt(0);
+        
+        // ✅ [LOG] 배터리 잔량 수신 로그
+        console.log(`🔋 [readBatteryByte] Raw: "${characteristic.value}" ➜ Level: ${level}%`);
+        
         setBatteryLevel(level);
       } catch (decodeErr) {
         console.error("❌ 배터리 값 디코딩 실패:", decodeErr);

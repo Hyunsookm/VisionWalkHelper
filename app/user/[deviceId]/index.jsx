@@ -4,7 +4,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Alert, SafeAreaView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
-import bleManager from "../../../utils/ble/bleManager";
+import bleManager from "../../../utils/ble/bleManager"; // 경로 확인 필요
 import {
   readLightByte,
   readAlarmByte,
@@ -14,11 +14,11 @@ import {
   writeAlarmByte,
   writeVolumeByte,
   subscribeToFallDetection,
-} from "../../../utils/ble/bleConfigUtils";
-import { getAuthInstance, db } from "../../../firebase/firebaseConfig";
-import { addDoc, collection, serverTimestamp, query, where, getDocs } from "firebase/firestore";
-import { locationUpdater } from "../../../locationupdater";
-import { styles } from "../../styles/userStyles";
+} from "../../../utils/ble/bleConfigUtils"; // 경로 확인 필요
+import { getAuthInstance, db } from "../../../firebase/firebaseConfig"; // 경로 확인 필요
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { locationUpdater } from "../../../locationupdater"; // 경로 확인 필요
+import { styles } from "../../styles/userStyles"; // 경로 확인 필요
 
 export default function DeviceDetailScreen() {
   const router = useRouter();
@@ -33,6 +33,7 @@ export default function DeviceDetailScreen() {
   const [batteryLevel, setBatteryLevel] = useState(null);
   const auth = getAuthInstance();
 
+  // Guardian UID 가져오기
   async function resolveGuardianUids(userUid) {
     try {
       const q = query(
@@ -53,37 +54,64 @@ export default function DeviceDetailScreen() {
     }
   }
 
+  // 1. [핵심 수정] deviceId를 이용해 Device 객체 복구
   useEffect(() => {
     if (!deviceId) {
       Alert.alert("오류", "deviceId가 없습니다.");
       return;
     }
+
+    const fetchDeviceObject = async () => {
+      try {
+        // 이미 연결되어 있다고 가정하고, 관리자에게 해당 ID의 기기 객체를 요청
+        // react-native-ble-plx의 경우 devices([id]) 메서드 사용 가능
+        const devices = await bleManager.devices([deviceId]);
+        if (devices && devices.length > 0) {
+          const deviceObj = devices[0];
+          
+          // 혹시 연결이 끊겨있을 수도 있으니 확인 (선택 사항)
+          const isConnected = await deviceObj.isConnected();
+          if (isConnected) {
+            console.log("✅ Device 객체 확보 완료:", deviceObj.id);
+            setDevice(deviceObj); // 여기서 state가 업데이트되어야 아래 로직들이 돕니다.
+          } else {
+            console.warn("⚠️ 기기가 연결되어 있지 않습니다. 재연결 시도...");
+            await deviceObj.connect();
+            await deviceObj.discoverAllServicesAndCharacteristics();
+            setDevice(deviceObj);
+          }
+        } else {
+          console.error("❌ 해당 ID의 기기를 찾을 수 없습니다 (Scan 필요 가능성).");
+          Alert.alert("연결 오류", "기기 객체를 찾을 수 없습니다. 다시 연결해주세요.");
+          router.back();
+        }
+      } catch (e) {
+        console.error("❌ Device 객체 복구 실패:", e);
+      }
+    };
+
+    fetchDeviceObject();
   }, [deviceId]);
 
-  // BLE 연결 상태에 따라 위치업데이트 시작/중지
+  // 2. [기존 유지] 위치 업데이트 로직
   useEffect(() => {
     const onConnected = (evt) => {
       if (deviceId && evt?.deviceId && evt.deviceId !== deviceId) return;
       locationUpdater.setSendAllowed(true);
-      locationUpdater.start({ immediate: true }).catch((e) => {
-        console.warn("location start error:", e);
-      });
+      locationUpdater.start({ immediate: true }).catch((e) => console.warn(e));
     };
-
     const onDisconnected = (evt) => {
       if (deviceId && evt?.deviceId && evt.deviceId !== deviceId) return;
       locationUpdater.setSendAllowed(false);
       locationUpdater.stop().catch(() => {});
     };
-
     const subConn = bleManager.on?.("connected", onConnected);
     const subDisc = bleManager.on?.("disconnected", onDisconnected);
 
-    try {
-      if (bleManager.isConnected?.(deviceId)) {
-        onConnected({ deviceId });
-      }
-    } catch {}
+    // 초기 상태 확인
+    bleManager.isDeviceConnected(deviceId).then((connected) => {
+        if(connected) onConnected({ deviceId });
+    }).catch(()=>{});
 
     return () => {
       subConn?.remove?.();
@@ -93,20 +121,44 @@ export default function DeviceDetailScreen() {
     };
   }, [deviceId]);
 
+  // 3. [핵심 수정] Device 객체가 생기면 구독 및 초기값 읽기 실행
   useEffect(() => {
-    if (!device) return;
+    if (!device) return; // device가 setDevice로 설정된 후에만 실행됨
 
+    // (1) 배터리 구독
     const batterySubscription = readBatteryByte(device, setBatteryLevel);
+    
+    // (2) 낙상 감지 구독
     const fallSubscription = subscribeToFallDetection(device, auth, db, {
       guardianUidsResolver: resolveGuardianUids,
     });
+
+    // (3) [추가됨] 초기 상태값(전조등, 알람, 볼륨) 한 번 읽어오기 (동기화)
+    const syncInitialState = async () => {
+        try {
+            const lVal = await readLightByte(device);
+            setIsLightOn(lVal === 1);
+
+            const aVal = await readAlarmByte(device);
+            setAlarmByte(aVal);
+            setIsAlarmOn(aVal > 0);
+
+            const vVal = await readVolumeByte(device);
+            setVolumeLevel(vVal);
+        } catch (err) {
+            console.warn("⚠️ 초기 상태 동기화 중 일부 실패:", err.message);
+        }
+    };
+    syncInitialState();
 
     return () => {
       batterySubscription?.remove?.();
       fallSubscription?.remove?.();
     };
-  }, [device]);
+  }, [device]); // device가 변경될 때 실행
 
+  // ... (toggleLight, toggleAlarm, onChangeVolume, render 부분은 기존과 동일) ...
+  
   const toggleLight = async (newVal) => {
     setIsLightOn(newVal);
     if (!device) return;
@@ -114,6 +166,8 @@ export default function DeviceDetailScreen() {
       await writeLightByte(device, newVal ? 1 : 0);
     } catch (e) {
       Alert.alert("쓰기 실패", e.message);
+      // 실패 시 UI 원상복구
+      setIsLightOn(!newVal);
     }
   };
 
@@ -126,6 +180,7 @@ export default function DeviceDetailScreen() {
       setAlarmByte(byteVal);
     } catch (e) {
       Alert.alert("쓰기 실패", e.message);
+      setIsAlarmOn(!newVal);
     }
   };
 
@@ -147,7 +202,7 @@ export default function DeviceDetailScreen() {
           <View style={styles.settingLeft}>
             <Text style={styles.settingTitle}>연결 상태</Text>
             <Text style={styles.settingSubtitle}>
-              {device ? "연결됨" : "연결 대기 중"}
+              {device ? "연결됨" : "연결 정보를 불러오는 중..."}
             </Text>
             <Icon name="bluetooth" size={20} style={{ marginLeft: 105 }} color={device ? "#3b82f6" : "#ccc"} />
           </View>
@@ -156,11 +211,12 @@ export default function DeviceDetailScreen() {
         <View style={styles.settingItem}>
           <Text style={styles.settingTitle}>배터리 레벨</Text>
           <Text style={styles.settingSubtitle}>
-            {batteryLevel !== null ? `${batteryLevel}%` : "읽는 중..."}
+            {batteryLevel !== null ? `${batteryLevel}%` : "측정 중..."}
           </Text>
         </View>
 
-        <View style={styles.settingItem}>
+        {/* ... 나머지 UI (전조등, 알람, 볼륨, 하단 네비게이션) 기존과 동일 ... */}
+         <View style={styles.settingItem}>
           <Text style={styles.settingTitle}>전조등</Text>
           <Switch
             value={isLightOn}
@@ -202,8 +258,8 @@ export default function DeviceDetailScreen() {
           </View>
         </View>
       </View>
-
-      <View style={styles.bottomNav}>
+      
+       <View style={styles.bottomNav}>
         <TouchableOpacity
           style={[styles.navItem, styles.activeNavItem]}
           onPress={() => router.push("/user/DeviceSettingsScreen")}
@@ -231,5 +287,3 @@ export default function DeviceDetailScreen() {
     </SafeAreaView>
   );
 }
-
-const localStyles = StyleSheet.create({});

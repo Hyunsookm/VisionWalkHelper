@@ -86,17 +86,6 @@ export default function UserSettingScreen() {
           <Feather name="chevron-right" size={20} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.row} onPress={handleGoMap}>
-          <Text style={styles.rowText}>지도로 가기</Text>
-          <Feather name="chevron-right" size={20} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.row} onPress={handleGoDeviceDetail}>
-          <Text style={styles.rowText}>ble로 가기</Text>
-          <Feather name="chevron-right" size={20} />
-        </TouchableOpacity>
-
-
         {/* 푸시 알림 토글 */}
         <View style={styles.row}>
           <Text style={styles.rowText}>푸시 알림 설정</Text>
