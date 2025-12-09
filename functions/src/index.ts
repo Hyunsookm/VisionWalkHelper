@@ -8,7 +8,7 @@ const messaging = admin.messaging();
 
 export const onAlertCreate = functions.firestore
   .document("alerts/{alertId}")
-  .onCreate(async (snap: functions.firestore.QueryDocumentSnapshot, context: functions.EventContext) => {
+  .onCreate(async (snap, context) => {
     const alert = snap.data() as {
       userUid?: string;
       guardianUids?: string[];
@@ -27,7 +27,18 @@ export const onAlertCreate = functions.firestore
     const tokenSnaps = await Promise.all(
       guardianUids.map(uid => db.collection("users").doc(uid).collection("fcmTokens").get())
     );
-    const tokens = tokenSnaps.flatMap(s => s.docs.map(d => d.id));
+
+    // 중복 제거
+    const tokens = Array.from(
+      new Set(
+        tokenSnaps.flatMap(s => s.docs.map(d => d.id))
+      )
+    );
+
+    console.log("guardianUids:", guardianUids);
+    console.log("raw token count:", tokenSnaps.reduce((sum, s) => sum + s.size, 0));
+    console.log("unique token count:", tokens.length);
+
     if (tokens.length === 0) return;
 
     const title = alert.type === "fall" ? "낙상 감지" : "알림";
